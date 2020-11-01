@@ -1,81 +1,107 @@
 <!DOCTYPE html>
 <html lang="en-us" manifest="idbtasklist.manifest">
 <head>
-	<meta charset="utf-8">
-	<title>IndexedDB Task List</title>
-	<link rel="stylesheet" href="css/style.css">
+    <meta charset="utf-8">
+    <title>IndexedDB Task List</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/bootup.js"></script>
 </head>
 <body>
 
-<header>
-	<div><a href="https://github.com/webinista/IDBTaskList"><img style="position: absolute; top: 0; left: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_left_green_007200.png" alt="Fork me on GitHub"></a></div>
-	<p style="position:relative;margin:0"><a href="http://dev.opera.com/articles/introduction-to-indexeddb/">Related article on Dev.Opera</a></p>
-</header>
-   
-   <section id="tasklist">
-		<h1>To-do List</h1>
-   		<form id="search">
-       	 	<div><input type="search" id="find" name="find">
-        	<button type="submit" id="submit">Search</button>
-        	<button type="button" id="showadd" data-show="#addnew" data-hide="#tasklist">Add new</button></div>
-   	 	</form>   
-		<table id="list" class="hidden">
-			<thead>
-				<tr>
-					<th>Task</th>
-					<th>Due</th>
-					<th>Priority</th>
-					<th>Complete</th>
-				</tr>
-			</thead>
-			<tbody></tbody>
-		</table>
-    </section>
-    
-    <form id="addnew" class="hidden" data-mode="add"> 
-        <div>
-            <input type="hidden" name="key" id="key" value="">
-            <label for="task">What do you need to do? (required)</label>
-           <button type="button" class="right" data-show="#tasklist" data-hide="#addnew" id="viewall">View all tasks</button>
-            <input type="text" name="task" id="task" value="" required>
-        </div>
-        <p class="txtright">
-            <input type="checkbox" name="status" id="status"><label for="status">Completed?</label>
-        </div>
-       
-        <div>
-            <label for="start">Start date:</label>
-            <input type="date" id="start" name="start" value="">
-        </div>
-        <div>
-            <label for="due">Due date:</label>
-            <input type="date" id="due" name="due" value="">
-        </div>
-        
-        <div>
-            <label for="priority">Priority:</label>
-            <select id="priority" name="priority">
-                <option value="0">None</option>
-                <option value="1">1 - High</option>
-                <option value="2">2</option>
-                <option value="3">3 - Medium</option>
-                <option value="4">4</option>
-                <option value="5">5 - Low</option>
-            </select>
-        </div>
-        
-        <div>
-            <label for="notes">Task notes</label> 
-            <textarea id="notes" name="notes" cols="30" rows="3"></textarea>
-            <button type="submit" id="submit">Save entry</button>
-            <button type="button" id="delete">Delete entry</button>
-        </div>
-    </form>
+<header><h1>ToDoLocally</h1></header>
 
-	<footer>
-		<p>By <a href="http://tiffanybbrown.com/">Tiffany B. Brown</a>. Released to the <a href="LICENSE.txt">public domain</a>. Have at it!</p>
-	</footer>
-	<script type="text/javascript" src="js/utils.js"></script>
-    <script type="text/javascript" src="js/todolist.js"></script>
+<form id="addNew" class="hidden" data-mode="add">
+    <div>
+        <input type="hidden" name="key" id="key" value="">
+        <label for="task">Summary *</label>
+        <input type="text" name="task" id="task" value="" required>
+    </div>
+    <div>
+        <span id="stage-label">Task stage</span>
+        <p id="stage-display"></p>
+        <label for="status">Done</label>
+        <input type="checkbox" id="status" name="status" value="">
+        <input type="hidden" name="resolved" id="resolved" value="">
+        <label for="display">Hidden</label>
+        <input type="checkbox" id="display" name="display" value="">
+    </div>
+    <div>
+        <label for="due">Due date</label>
+        <input type="date" id="due" name="due" value="">
+    </div>
+
+    <div>
+        <label for="priority">Priority</label>
+        <select id="priority" name="priority">
+            <option value="0">None</option>
+            <option value="1">Low</option>
+            <option value="2">Medium</option>
+            <option value="3">High</option>
+        </select>
+    </div>
+
+    <div>
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes" cols="30" rows="3"></textarea>
+        <div>
+            <button type="button" class="submit" id="save-button">Save</button>
+            <button type="button" id="delete-button">Delete</button>
+            <button type="button" id="cancel-button" onclick="hideNewForm()">Cancel</button>
+        </div>
+    </div>
+</form>
+<br>
+<br>
+<section id="tasklist">
+    <div id="search" class="search-form">
+        <button type="button" class="submit" id="search-button">Search</button>
+        <label for="find"></label><input type="search" id="find" name="find"/>
+    </div>
+    <br>
+    <div id="list">
+        <table id="task-table">
+            <thead>
+            <tr>
+                <th>
+                    <button class="add-button" type="button" id="showadd-current"
+                            onclick="showNewForm('current', false)">+
+                    </button>
+                    Current tasks
+                </th>
+                <th>
+                    <button class="add-button" type="button" id="showadd-ongoing"
+                            onclick="showNewForm('ongoing', false)">+
+                    </button>
+                    Ongoing
+                </th>
+                <th>
+                    <button class="add-button" type="button" id="showadd-backlog"
+                            onclick="showNewForm('backlog', false)">+
+                    </button>
+                    Backlog
+                </th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>
+                    <div class="task-area" id="current-tasks"></div>
+                </td>
+                <td>
+                    <div class="task-area" id="ongoing-tasks"></div>
+                </td>
+                <td>
+                    <div class="task-area" id="backlog-tasks"></div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<footer>
+</footer>
+<script type="text/javascript" src="js/utils.js"></script>
+<script type="text/javascript" src="js/todolist.js"></script>
 </body>
 </html>

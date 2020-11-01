@@ -8,3 +8,4 @@ images/tri.svg
 scripts/IndexedDBShim.min.js	
 scripts/todolist.js		
 scripts/utils.js
+scripts/bootup.js
