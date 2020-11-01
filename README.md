@@ -1,5 +1,5 @@
-IDBTaskList
+ToDoLocally
 ===========
 
-A public-domain licensed example of a task manager built using IndexedDB. 
+A public-domain licensed task manager built using IndexedDB. 
 
