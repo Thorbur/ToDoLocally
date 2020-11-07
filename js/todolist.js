@@ -219,7 +219,15 @@ buildTask = function (recordobject) {
         // priority
         p = document.createElement('p');
         p.setAttribute('class', 'task-priority');
-        p.innerText = record.priority;
+        let priorityName = "None";
+        switch (record.priority) {
+            case 3: priorityName = "High"; break;
+            case 2: priorityName = "Medium"; break;
+            case 1: priorityName = "Low"; break;
+            case 0:
+            default: priorityName = "None"; break;
+        }
+        p.innerText = priorityName;
         div.appendChild(p);
 
         // hide button
