@@ -84,7 +84,7 @@ function resetForm() {
     addNew.key.value = '';
 
     /* Set default start, due dates */
-    addNew.due.value = today;
+    //addNew.due.value = today;
 }
 
 /* Global error handler message */
@@ -190,6 +190,10 @@ buildTask = function (recordobject) {
 
     record = recordobject.value;
     record.primaryKey = recordobject.primaryKey;
+
+    if(record.due < Date.now()) {
+        div.classList.add("overdue");
+    }
 
     if (record) {
         // status
