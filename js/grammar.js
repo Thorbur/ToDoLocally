@@ -53,7 +53,7 @@ var grammar = {
     {"name": "NUM$ebnf$1", "symbols": [/[1-9]/, "NUM$ebnf$1"], "postprocess": function arrconcat(d) {return [d[0]].concat(d[1]);}},
     {"name": "NUM", "symbols": ["NUM$ebnf$1"], "postprocess": function(d) {return parseInt(d[0].join(""))}},
     {"name": "STR$ebnf$1", "symbols": []},
-    {"name": "STR$ebnf$1", "symbols": [/[\S\s]/, "STR$ebnf$1"], "postprocess": function arrconcat(d) {return [d[0]].concat(d[1]);}},
+    {"name": "STR$ebnf$1", "symbols": [/[^"]/, "STR$ebnf$1"], "postprocess": function arrconcat(d) {return [d[0]].concat(d[1]);}},
     {"name": "STR", "symbols": [{"literal":"\"","pos":303}, "STR$ebnf$1", {"literal":"\"","pos":308}], "postprocess": function(d) {return d[1].join("")}},
     {"name": "_$ebnf$1", "symbols": []},
     {"name": "_$ebnf$1", "symbols": [/[\s]/, "_$ebnf$1"], "postprocess": function arrconcat(d) {return [d[0]].concat(d[1]);}},

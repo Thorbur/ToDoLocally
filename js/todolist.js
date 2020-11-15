@@ -372,7 +372,6 @@ function evaluateStatement(statement, record) {
         const left = evaluateStatement(statement[1], record);
         let right = evaluateStatement(statement[2], record);
         if(["due", "resolved"].includes(statement[1])){
-            console.log(left);
             if(left === undefined || left === null || left === ""){
                 /* Invalid due dates should not be found */
                 return false;

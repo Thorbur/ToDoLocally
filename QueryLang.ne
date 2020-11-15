@@ -46,6 +46,6 @@ CONT  -> "~"					{% function(d) {return d[0]} %}
 
 NUM   -> [1-9]:+ 				{% function(d) {return parseInt(d[0].join(""))} %}
 
-STR   -> "\"" [\S\s]:* "\""		{% function(d) {return d[1].join("")} %}
+STR   -> "\"" [^"]:* "\""		{% function(d) {return d[1].join("")} %}
 
 _	  -> [\s]:*					{% function(d) {return null } %}
