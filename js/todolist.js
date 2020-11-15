@@ -6,13 +6,18 @@ let addNewHandler, addCheckbox, buildTask, displayTasks, editHandler, hideHandle
 
 utils.loadShim();
 
-let search = document.getElementById('search');
+/* Elements */
+let search = document.getElementById('search-button');
 let addNew = document.getElementById('addNew');
 let savebtn = document.getElementById('save-button');
 let currenttasksbox = document.getElementById('current-tasks');
 let ongoingtasksbox = document.getElementById('ongoing-tasks');
 let backlogtasksbox = document.getElementById('backlog-tasks');
 let deletebtn = document.getElementById('delete-button');
+let backbtn = document.getElementById("back-button");
+
+/* Global variables */
+let displayMode = "normal";
 
 function allowDrop(ev) {
     ev.preventDefault();
@@ -191,7 +196,7 @@ buildTask = function (recordobject) {
     record = recordobject.value;
     record.primaryKey = recordobject.primaryKey;
 
-    if(record.due < Date.now()) {
+    if (record.due && record.due < Date.now()) {
         div.classList.add("overdue");
     }
 
@@ -204,6 +209,7 @@ buildTask = function (recordobject) {
         p = document.createElement('p');
         p.setAttribute('data-recordid', record.primaryKey);
         p.setAttribute('class', 'task-title');
+        p.classList.add("dont-break-out");
         p.innerText = record.task;
         div.appendChild(p);
 
@@ -219,15 +225,7 @@ buildTask = function (recordobject) {
         // priority
         p = document.createElement('p');
         p.setAttribute('class', 'task-priority');
-        let priorityName = "None";
-        switch (record.priority) {
-            case 3: priorityName = "High"; break;
-            case 2: priorityName = "Medium"; break;
-            case 1: priorityName = "Low"; break;
-            case 0:
-            default: priorityName = "None"; break;
-        }
-        p.innerText = priorityName;
+        p.innerText = mapPriority(record.priority);
         div.appendChild(p);
 
         // hide button
@@ -242,7 +240,11 @@ buildTask = function (recordobject) {
         // due date
         p = document.createElement('p');
         p.setAttribute('class', 'task-due');
-        p.innerText = new Date(record.due).toDateString();
+        if(record.due) {
+            p.innerText = new Date(record.due).toDateString();
+        } else {
+            p.innerText = "No due date";
+        }
         div.appendChild(p);
 
         // display or hidden
@@ -279,7 +281,7 @@ addNewHandler = function (evt) {
     entry.task = fields.task.value;
 
     /* If there's a date, save as time stamps instead of date strings. */
-    entry.due = fields.due.value === '' ? '' : timestamp(fields.due);
+    entry.due = fields.due.value === '' ? null : timestamp(fields.due);
 
     /*  Convert to number */
     entry.priority = +fields.priority.value;
@@ -320,7 +322,11 @@ addNewHandler = function (evt) {
 
     transaction.oncomplete = function (evt) {
         hideNewForm();
-        displayTasks(dbobject);
+        if (displayMode === 'search') {
+            searchHandler();
+        } else {
+            displayTasks(dbobject);
+        }
         resetForm();
     };
 
@@ -351,33 +357,123 @@ updateStatus = function (evt) {
     }
 };
 
-searchHandler = function (evt) {
-    // todo
-    'use strict';
-    evt.preventDefault();
-    let transaction, objectstore, index, request, docfrag = document.createDocumentFragment();
+function mapPriority(priorityNumber){
+    switch (priorityNumber){
+        case 0: return "none";
+        case 1: return "low";
+        case 2: return "medium";
+        case 3: return "high";
+        default: return "none";
+    }
+}
 
-    transaction = dbobject.transaction(['tasks'], 'readwrite');
+function evaluateStatement(statement, record) {
+    if(Array.isArray(statement)) {
+        const left = evaluateStatement(statement[1], record);
+        let right = evaluateStatement(statement[2], record);
+        if(["due", "resolved"].includes(statement[1])){
+            /* has to be a date string in this case */
+            right = Date.parse(statement[2]);
+        } else if(statement[1] === "priority"){
+            /* has to be a priority string in this case */
+            right = right.toLowerCase();
+        }
+        switch (statement[0]) {
+            case "=": return left === right;
+            case "!=": return left !== right;
+            case "~": return left.includes(right);
+            case "<": return left < right;
+            case ">": return left > right;
+            case "and": return left && right;
+            case "or": return left || right;
+        }
+    } else{
+        switch(statement){
+            case "due": return record.value.due;
+            case "resolved": return record.value.resolved;
+            case "id": return record.primaryKey;
+            case "title": return record.value.task;
+            case "notes": return record.value.notes;
+            case "priority": return mapPriority(record.value.priority);
+            case "stage": return record.value.stage;
+            case "hidden": return !record.value.display;
+            case "done": return (record.value.status !== "open");
+            default: return statement;
+        }
+    }
+    return false;
+}
+
+function isMatching(query, record) {
+    const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
+    if (!query) {
+        /* empty query -> matches all */
+        return true;
+    }
+    try {
+        parser.feed(query);
+        if(parser.results.length !== 1){
+            console.log("Ambiguous search query");
+            return false;
+        } else {
+            return evaluateStatement(parser.results[0], record);
+        }
+    } catch (err) {
+        console.log("Invalid search query!");
+    }
+}
+
+searchHandler = function () {
+    // todo: search by attributes
+    'use strict';
+    let transaction, objectstore, index, request, list, query, found = false,
+        docfrag = document.createDocumentFragment();
+    list = document.getElementById("list");
+    query = document.getElementById("find").value;
+
+    /* Change display mode */
+    displayMode = 'search';
+
+    /* Display back button */
+    backbtn.classList.remove("hidden");
+
+    transaction = dbobject.transaction(['tasks'], 'readonly');
     objectstore = transaction.objectStore('tasks');
     index = objectstore.index('by_task');
     request = index.openCursor(IDBKeyRange.lowerBound(0), 'next');
 
-    /* Clear table body */
-    currenttasksbox.innerHTML = '';
+    /* Clear the list */
+    list.innerHTML = '';
 
     request.onsuccess = function (successevent) {
-        let reg, cursor, task;
-        reg = new RegExp(evt.target.find.value, "i");
+        let cursor, task;
         cursor = request.result;
 
         if (cursor !== null) {
-            if (reg.test(cursor.value.task) || reg.test(cursor.value.notes)) {
+            if (isMatching(query, cursor)) {
                 task = buildTask(cursor);
                 docfrag.appendChild(task);
+                found = true;
+            } else {
+                console.log("Task " + cursor.primaryKey + " does not match.");
             }
             cursor.continue();
         }
-        currenttasksbox.appendChild(docfrag);
+        list.appendChild(docfrag);
+    };
+
+    transaction.oncomplete = function () {
+        if (!found) {
+            let resultMessage = document.createElement("p");
+            resultMessage.innerText = "No matching tasks have been found...";
+            list.appendChild(resultMessage);
+        } else {
+            /* Make all hidden elements visible in the search results */
+            let el;
+            for (el of document.getElementsByClassName("task")) {
+                el.classList.remove("hidden");
+            }
+        }
     };
 };
 
@@ -385,7 +481,6 @@ editHandler = function (taskId) {
     'use strict';
     let transaction, objectstore, request;
 
-    // Deliberately testing for a truthy rather than a true value
     if (taskId) {
         transaction = dbobject.transaction(['tasks'], 'readonly');
         objectstore = transaction.objectStore('tasks');
@@ -449,6 +544,7 @@ deleteHandler = function (evt) {
 };
 
 sort = function (evt) {
+    // todo: can be deleted?
     'use strict';
     let which, dir, docfrag = document.createDocumentFragment(), index, transaction, objectstore, request;
 
@@ -507,6 +603,17 @@ sort = function (evt) {
 };
 
 deletebtn.addEventListener('click', deleteHandler);
-search.addEventListener('submit', searchHandler);
+search.addEventListener('click', searchHandler);
+document.getElementById("find").addEventListener("keyup", function(event) {
+    // Number 13 is the "Enter" key on the keyboard
+    if (event.code === "Enter") {
+        event.preventDefault();
+        // Trigger the button element with a click
+        search.click();
+    }
+});
 savebtn.addEventListener('click', addNewHandler);
+backbtn.addEventListener('click', function () {
+    location.reload()
+});
 window.addEventListener('load', init);

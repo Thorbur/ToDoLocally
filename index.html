@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<html lang="en-us" manifest="idbtasklist.manifest">
+<html lang="en-us">
 <head>
     <meta charset="utf-8">
     <title>IndexedDB Task List</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="js/bootup.js"></script>
+    <script src="js/nearley.js"></script>
+    <script src="js/grammar.js"></script>
 </head>
 <body>
 
@@ -58,6 +60,7 @@
         <label for="find"></label><input type="search" id="find" name="find"/>
     </div>
     <br>
+    <button id="back-button" class="hidden">Back to task view</button>
     <div id="list">
         <table id="task-table">
             <thead>
