@@ -424,7 +424,6 @@ function isMatching(query, record) {
 }
 
 searchHandler = function () {
-    // todo: search by attributes
     'use strict';
     let transaction, objectstore, index, request, list, query, found = false,
         docfrag = document.createDocumentFragment();
