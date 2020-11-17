@@ -240,7 +240,7 @@ buildTask = function (recordobject) {
         // due date
         p = document.createElement('p');
         p.setAttribute('class', 'task-due');
-        if(record.due) {
+        if (record.due) {
             p.innerText = new Date(record.due).toDateString();
         } else {
             p.innerText = "No due date";
@@ -357,52 +357,79 @@ updateStatus = function (evt) {
     }
 };
 
-function mapPriority(priorityNumber){
-    switch (priorityNumber){
-        case 0: return "none";
-        case 1: return "low";
-        case 2: return "medium";
-        case 3: return "high";
-        default: return "none";
+function mapPriority(priorityNumber) {
+    switch (priorityNumber) {
+        case 0:
+            return "none";
+        case 1:
+            return "low";
+        case 2:
+            return "medium";
+        case 3:
+            return "high";
+        default:
+            return "none";
     }
 }
 
 function evaluateStatement(statement, record) {
-    if(Array.isArray(statement)) {
+    if (Array.isArray(statement)) {
         const left = evaluateStatement(statement[1], record);
         let right = evaluateStatement(statement[2], record);
-        if(["due", "resolved"].includes(statement[1])){
-            if(left === undefined || left === null || left === ""){
+        if (["due", "resolved"].includes(statement[1])) {
+            if (left === undefined || left === null || left === "") {
                 /* Invalid due dates should not be found */
                 return false;
             }
             /* has to be a date string in this case */
             right = Date.parse(statement[2]);
-        } else if(statement[1] === "priority"){
+        } else if (statement[1] === "priority") {
             /* has to be a priority string in this case */
             right = right.toLowerCase();
+        } else if (statement[1] === "id") {
+            /* has to be a number in this case */
+            right = parseInt(right);
         }
         switch (statement[0]) {
-            case "=": return left === right;
-            case "!=": return left !== right;
-            case "~": return left.includes(right);
-            case "<": return left < right;
-            case ">": return left > right;
-            case "and": return left && right;
-            case "or": return left || right;
+            case "=":
+                return left === right;
+            case "!=":
+                return left !== right;
+            case "~":
+                return left.includes(right);
+            case "!~":
+                return !left.includes(right);
+            case "<":
+                return left < right;
+            case ">":
+                return left > right;
+            case "and":
+                return left && right;
+            case "or":
+                return left || right;
         }
-    } else{
-        switch(statement){
-            case "due": return record.value.due;
-            case "resolved": return record.value.resolved;
-            case "id": return record.primaryKey;
-            case "title": return record.value.task;
-            case "notes": return record.value.notes;
-            case "priority": return mapPriority(record.value.priority);
-            case "stage": return record.value.stage;
-            case "hidden": return !record.value.display;
-            case "done": return (record.value.status !== "open");
-            default: return statement;
+    } else {
+        switch (statement) {
+            case "due":
+                return record.value.due;
+            case "resolved":
+                return record.value.resolved;
+            case "id":
+                return record.primaryKey;
+            case "title":
+                return record.value.task;
+            case "notes":
+                return record.value.notes;
+            case "priority":
+                return mapPriority(record.value.priority);
+            case "stage":
+                return record.value.stage;
+            case "hidden":
+                return !record.value.display;
+            case "done":
+                return (record.value.status !== "open");
+            default:
+                return statement;
         }
     }
     return false;
@@ -416,7 +443,7 @@ function isMatching(query, record) {
     }
     try {
         parser.feed(query);
-        if(parser.results.length !== 1){
+        if (parser.results.length !== 1) {
             console.log("Ambiguous search query");
             return false;
         } else {
@@ -437,48 +464,63 @@ searchHandler = function () {
     /* Change display mode */
     displayMode = 'search';
 
-    /* Display back button */
-    backbtn.classList.remove("hidden");
-
-    transaction = dbobject.transaction(['tasks'], 'readonly');
-    objectstore = transaction.objectStore('tasks');
-    index = objectstore.index('by_task');
-    request = index.openCursor(IDBKeyRange.lowerBound(0), 'next');
-
     /* Clear the list */
     list.innerHTML = '';
 
-    request.onsuccess = function (successevent) {
-        let cursor, task;
-        cursor = request.result;
+    /* Display back button */
+    backbtn.classList.remove("hidden");
 
-        if (cursor !== null) {
-            if (isMatching(query, cursor)) {
-                task = buildTask(cursor);
-                docfrag.appendChild(task);
-                found = true;
+    const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
+    try {
+        if (query) {
+            parser.feed(query);
+            if (parser.results.length !== 1) {
+                console.log("Ambiguous search query");
+                return;
+            }
+        }
+
+        transaction = dbobject.transaction(['tasks'], 'readonly');
+        objectstore = transaction.objectStore('tasks');
+        index = objectstore.index('by_task');
+        request = index.openCursor(IDBKeyRange.lowerBound(0), 'next');
+
+        request.onsuccess = function (successevent) {
+            let cursor, task;
+            cursor = request.result;
+
+            if (cursor !== null) {
+                /* empty query -> matches all */
+                if (!query || evaluateStatement(parser.results[0], cursor)) {
+                    task = buildTask(cursor);
+                    docfrag.appendChild(task);
+                    found = true;
+                } else {
+                    console.log("Task " + cursor.primaryKey + " does not match.");
+                }
+                cursor.continue();
+            }
+            list.appendChild(docfrag);
+        };
+
+        transaction.oncomplete = function () {
+            if (!found) {
+                let resultMessage = document.createElement("p");
+                resultMessage.innerText = "No matching tasks have been found...";
+                list.appendChild(resultMessage);
             } else {
-                console.log("Task " + cursor.primaryKey + " does not match.");
+                /* Make all hidden elements visible in the search results */
+                let el;
+                for (el of document.getElementsByClassName("task")) {
+                    el.classList.remove("hidden");
+                }
             }
-            cursor.continue();
-        }
-        list.appendChild(docfrag);
-    };
-
-    transaction.oncomplete = function () {
-        if (!found) {
-            let resultMessage = document.createElement("p");
-            resultMessage.innerText = "No matching tasks have been found...";
-            list.appendChild(resultMessage);
-        } else {
-            /* Make all hidden elements visible in the search results */
-            let el;
-            for (el of document.getElementsByClassName("task")) {
-                el.classList.remove("hidden");
-            }
-        }
-    };
-};
+        };
+    } catch (err) {
+        console.log("Invalid search query!");
+    }
+}
+;
 
 editHandler = function (taskId) {
     'use strict';
@@ -607,7 +649,7 @@ sort = function (evt) {
 
 deletebtn.addEventListener('click', deleteHandler);
 search.addEventListener('click', searchHandler);
-document.getElementById("find").addEventListener("keyup", function(event) {
+document.getElementById("find").addEventListener("keyup", function (event) {
     // Number 13 is the "Enter" key on the keyboard
     if (event.code === "Enter") {
         event.preventDefault();

@@ -35,19 +35,22 @@ Keywords to be exchanged with values from the tasks:
 - resolved = the resolution / completion date of the task (date string)
 - done = if the task is completed (boolean)
 - hidden = if the task is hidden (boolean)
+- id = the ID of the task (number)
 
 Operators to form conditional terms:
-- "<" = smaller (date string)
-- ">" = greater (date string)
-- "=" = equals (date string, text string, boolean)
-- "!=" = not equals (date string, text string, boolean)
+- "<" = smaller (date string, number)
+- ">" = greater (date string, number)
+- "=" = equals (date string, text string, boolean, number)
+- "!=" = not equals (date string, text string, boolean, number)
 - "~" = contains (text string)
+- "!~" = not contains (text string)
   
 Allowed values:
 - text string values must begin and end with double quotes (") and are allowed to contain 
-any character including whitespace other than double quotes. 
-Currently, double quotes cannot be escaped.
+any character including whitespace. 
+Double quotes itself need to be escaped with a backslash (\\").
 - date string values must also begin and end with double quotes. It is recommended to use the 
 ISO date and timestamp format. However, internally the value is interpreted by the JavaScript 
 function "Date.parse". Therefore, any common date formats should work out.
 - boolean values are just "true" or "false" without double quotes
+- number values are simples integers ([0-9]+)
