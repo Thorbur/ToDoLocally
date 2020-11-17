@@ -338,6 +338,7 @@ updateStatus = function (evt) {
     if (evt.target.nodeName === 'INPUT') {
 
         let transaction, objectstore, request, key = +evt.target.id;
+        let taskDiv = document.getElementById("task-" + key);
 
         transaction = dbobject.transaction(['tasks'], 'readwrite');
         objectstore = transaction.objectStore('tasks');
@@ -348,9 +349,13 @@ updateStatus = function (evt) {
             if (+evt.target.checked) {
                 reqevt.target.result.status = "done";
                 reqevt.target.result.resolved = +new Date();
+                taskDiv.classList.remove("overdue");
             } else {
                 reqevt.target.result.status = "open";
                 reqevt.target.result.resolved = null;
+                if(reqevt.target.result.due && reqevt.target.result.due < Date.now()){
+                    taskDiv.classList.add("overdue");
+                }
             }
             objectstore.put(reqevt.target.result, key);
         };

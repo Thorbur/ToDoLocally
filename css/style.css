@@ -224,7 +224,7 @@ button[type=button] {
 
 .overdue {
     background-color: lightcoral !important;
-    border: darkred solid 5px !important;
+    border: darkred solid 2px !important;
     color: white !important;
 }
 
