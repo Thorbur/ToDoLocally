@@ -435,25 +435,6 @@ function evaluateStatement(statement, record) {
     return false;
 }
 
-function isMatching(query, record) {
-    const parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-    if (!query) {
-        /* empty query -> matches all */
-        return true;
-    }
-    try {
-        parser.feed(query);
-        if (parser.results.length !== 1) {
-            console.log("Ambiguous search query");
-            return false;
-        } else {
-            return evaluateStatement(parser.results[0], record);
-        }
-    } catch (err) {
-        console.log("Invalid search query!");
-    }
-}
-
 searchHandler = function () {
     'use strict';
     let transaction, objectstore, index, request, list, query, found = false,
