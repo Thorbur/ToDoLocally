@@ -14,9 +14,40 @@ A public-domain licensed task manager built using IndexedDB.
 - Hiding of tasks
 - Drag n' Drop support to move tasks between stages
 - Highlighting overdue tasks
+- Attribute based search of tasks
 
 #### Upcoming features:
-- Attribute based search of tasks
 - Export of task database
 - Optional synchronization of task database over a network share
 - Encryption of task database
+
+#### Searching
+Searching of tasks is possible by entering a search query in the search field.
+The parser is based on the Nearley framework (https://nearley.js.org). 
+Below you can find the query language definition and there validity based on the attribute type:
+  
+Keywords to be exchanged with values from the tasks:
+- title = the title / summary of the task (text string)
+- notes = the notes about the task (text string)
+- stage = the stage the task is in (text string)
+- priority = the priority of the task (text string)
+- due = the due date of the task (date string)
+- resolved = the resolution / completion date of the task (date string)
+- done = if the task is completed (boolean)
+- hidden = if the task is hidden (boolean)
+
+Operators to form conditional terms:
+- "<" = smaller (date string)
+- ">" = greater (date string)
+- "=" = equals (date string, text string, boolean)
+- "!=" = not equals (date string, text string, boolean)
+- "~" = contains (text string)
+  
+Allowed values:
+- text string values must begin and end with double quotes (") and are allowed to contain 
+any character including whitespace other than double quotes. 
+Currently, double quotes cannot be escaped.
+- date string values must also begin and end with double quotes. It is recommended to use the 
+ISO date and timestamp format. However, internally the value is interpreted by the JavaScript 
+function "Date.parse". Therefore, any common date formats should work out.
+- boolean values are just "true" or "false" without double quotes

@@ -196,7 +196,7 @@ buildTask = function (recordobject) {
     record = recordobject.value;
     record.primaryKey = recordobject.primaryKey;
 
-    if (record.due && record.due < Date.now()) {
+    if (record.due && record.due < Date.now() && record.status === "open") {
         div.classList.add("overdue");
     }
 
