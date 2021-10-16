@@ -142,6 +142,109 @@ init = function () {
     };
 };
 
+function exportToJson(idbDatabase) {
+    return new Promise((resolve, reject) => {
+        const exportObject = {}
+        if (idbDatabase.objectStoreNames.length === 0) {
+            resolve(JSON.stringify(exportObject))
+        } else {
+            const transaction = idbDatabase.transaction(
+                idbDatabase.objectStoreNames,
+                'readonly'
+            )
+
+            transaction.addEventListener('error', reject)
+
+            for (const storeName of idbDatabase.objectStoreNames) {
+                const allObjects = []
+                transaction
+                    .objectStore(storeName)
+                    .openCursor()
+                    .addEventListener('success', event => {
+                        const cursor = event.target.result
+                        if (cursor) {
+                            // Cursor holds value, put it into store data
+                            allObjects.push(cursor.value)
+                            cursor.continue()
+                        } else {
+                            // No more values, store is done
+                            exportObject[storeName] = allObjects
+
+                            // Last store was handled
+                            if (
+                                idbDatabase.objectStoreNames.length ===
+                                Object.keys(exportObject).length
+                            ) {
+                                resolve(JSON.stringify(exportObject))
+                            }
+                        }
+                    })
+            }
+        }
+    })
+}
+
+function importFromJson(idbDatabase, json) {
+    return new Promise((resolve, reject) => {
+        const transaction = idbDatabase.transaction(
+            idbDatabase.objectStoreNames,
+            'readwrite'
+        )
+        transaction.addEventListener('error', reject)
+
+        var importObject = JSON.parse(json)
+        for (const storeName of idbDatabase.objectStoreNames) {
+            let count = 0
+            for (const toAdd of importObject[storeName]) {
+                const request = transaction.objectStore(storeName).add(toAdd)
+                request.addEventListener('success', () => {
+                    count++
+                    if (count === importObject[storeName].length) {
+                        // Added all objects for this store
+                        delete importObject[storeName]
+                        if (Object.keys(importObject).length === 0) {
+                            // Added all object stores
+                            resolve()
+                        }
+                    }
+                })
+            }
+        }
+    })
+}
+
+
+async function readFile(event) {
+    await importFromJson(dbobject, event.target.result);
+    location.reload();
+}
+
+function processFile(files){
+    if(files !== null) {
+        let reader = new FileReader();
+        reader.addEventListener('load', readFile);
+        reader.readAsText(files[0]);
+        this.value = null;
+    } else {
+        console.log("No files were selected!");
+    }
+}
+
+async function importData(){
+    let input = document.querySelector('input[type=file]');
+    input.click();
+}
+
+async function exportData() {
+    let exported = await exportToJson(dbobject);
+    const a = document.createElement('a');
+    const blob = new Blob([exported]);
+    a.href = URL.createObjectURL(blob);
+    a.download = 'taskDB.json';
+    a.click();
+}
+
+
 function removeAllChildNodes(parent) {
     while (parent.firstChild) {
         parent.removeChild(parent.firstChild);
@@ -645,6 +748,6 @@ document.getElementById("find").addEventListener("keyup", function (event) {
 });
 savebtn.addEventListener('click', addNewHandler);
 backbtn.addEventListener('click', function () {
-    location.reload()
+    location.reload();
 });
 window.addEventListener('load', init);

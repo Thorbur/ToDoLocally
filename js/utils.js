@@ -35,3 +35,11 @@ Utils.prototype.loadShim = function () {
 
 utils = new Utils();
 
+
+function openNav() {
+    document.getElementById("menuSidenav").style.width = "250px";
+}
+
+function closeNav() {
+    document.getElementById("menuSidenav").style.width = "0";
+}

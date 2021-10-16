@@ -2,7 +2,7 @@
 <html lang="en-us">
 <head>
     <meta charset="utf-8">
-    <title>IndexedDB Task List</title>
+    <title>ToDoLocally</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="js/bootup.js"></script>
     <script src="js/nearley.js"></script>
@@ -10,7 +10,15 @@
 </head>
 <body>
 
-<header><h1>ToDoLocally</h1></header>
+<div id="menuSidenav" class="sidenav">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <a href="javascript:void(0)" onclick="exportData()">Export</a>
+    <a href="javascript:void(0)" onclick="importData()">Import</a>
+    <input id="import-file" type="file" onchange="processFile(this.files)">
+    <a href="#">Settings</a>
+</div>
+
+<header><div><span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776; menu</span><h1 id="app-title">ToDoLocally</h1></div></header>
 
 <form id="addNew" class="hidden" data-mode="add">
     <div>
