@@ -244,6 +244,18 @@ async function exportData() {
     a.click();
 }
 
+async function sendToSocketServer(){
+    // TODO: add exception handling
+    let exported = await exportToJson(dbobject);
+    const socket = new WebSocket('ws://localhost:8888'); // TODO: make connection string configurable
+    socket.addEventListener('message', function (event) {
+        console.log(event.data);
+    });
+    socket.addEventListener('open', function (event) {
+        socket.send(exported.toString());
+    });
+}
+
 
 function removeAllChildNodes(parent) {
     while (parent.firstChild) {
@@ -751,3 +763,7 @@ backbtn.addEventListener('click', function () {
     location.reload();
 });
 window.addEventListener('load', init);
+
+// regularly sending the data to the WebSocketServer for backup
+// TODO: instead of regular backup add a backup on every change
+window.setInterval(sendToSocketServer, 60000); // TODO: add switch and make configurable
