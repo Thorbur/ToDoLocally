@@ -15,10 +15,11 @@ A public-domain licensed task manager built using IndexedDB.
 - Drag n' Drop support to move tasks between stages
 - Highlighting overdue tasks
 - Attribute based search of tasks
+- Export & Import of task database
+- Optional regular backup of task database to a network service
 
 #### Upcoming features:
-- Export of task database
-- Optional synchronization of task database over a network share
+- Optional Synchronization over network
 - Encryption of task database
 
 #### Searching
