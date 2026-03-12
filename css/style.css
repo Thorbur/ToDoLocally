@@ -5,9 +5,162 @@ body {
     color: #222;
 }
 
+:root {
+    --bg: #ffffff;
+    --text: #222222;
+    --header-bg: #eeeeee;
+    --header-border: #dddddd;
+    --panel-border: #cccccc;
+    --footer-text: #666666;
+    --input-bg: #ffffff;
+    --input-border: #cccccc;
+    --task-bg: #ffffff;
+    --task-border: darkgoldenrod;
+    --task-text: #222222;
+    --overdue-bg: lightcoral;
+    --overdue-border: darkred;
+    --overdue-text: #ffffff;
+    --stage-current: rgba(255, 140, 0, 0.2);
+    --stage-ongoing: rgba(127, 255, 212, 0.2);
+    --stage-backlog: rgba(100, 149, 237, 0.2);
+    --menu-bg: #111111;
+    --menu-link: #818181;
+    --menu-link-hover: #f2f2f2;
+    --menu-text: #d9d9d9;
+    --button-text: #ffffff;
+    --button-bg: lightgreen;
+    --button-border: darkolivegreen;
+    --button-delete-bg: coral;
+    --button-delete-border: indianred;
+    --button-cancel-bg: dodgerblue;
+    --button-cancel-border: darkblue;
+}
+
+body.theme-default {
+    --bg: #ffffff;
+    --text: #222222;
+}
+
+body.theme-dark {
+    --bg: #14191f;
+    --text: #e7edf3;
+    --header-bg: #1f2630;
+    --header-border: #2a3440;
+    --panel-border: #334150;
+    --footer-text: #9cb0c3;
+    --input-bg: #0f141a;
+    --input-border: #3a4756;
+    --task-bg: #1c2430;
+    --task-border: #4b89c2;
+    --task-text: #e7edf3;
+    --stage-current: rgba(255, 153, 51, 0.18);
+    --stage-ongoing: rgba(36, 170, 152, 0.18);
+    --stage-backlog: rgba(79, 129, 189, 0.2);
+    --menu-bg: #0c1016;
+    --menu-link: #9fb1c6;
+    --menu-link-hover: #ffffff;
+    --menu-text: #d2deea;
+    --button-bg: #4a8f4f;
+    --button-border: #2b5b2f;
+    --button-delete-bg: #c05850;
+    --button-delete-border: #7d302d;
+    --button-cancel-bg: #3f6fb1;
+    --button-cancel-border: #274775;
+}
+
+body.theme-high-contrast {
+    --bg: #000000;
+    --text: #ffffff;
+    --header-bg: #000000;
+    --header-border: #ffffff;
+    --panel-border: #ffffff;
+    --footer-text: #ffffff;
+    --input-bg: #000000;
+    --input-border: #ffffff;
+    --task-bg: #000000;
+    --task-border: #ffff00;
+    --task-text: #ffffff;
+    --overdue-bg: #ff0000;
+    --overdue-border: #ffffff;
+    --overdue-text: #ffffff;
+    --stage-current: rgba(255, 255, 0, 0.2);
+    --stage-ongoing: rgba(0, 255, 255, 0.2);
+    --stage-backlog: rgba(255, 0, 255, 0.2);
+    --menu-bg: #000000;
+    --menu-link: #ffffff;
+    --menu-link-hover: #ffff00;
+    --menu-text: #ffffff;
+    --button-text: #000000;
+    --button-bg: #00ff00;
+    --button-border: #ffffff;
+    --button-delete-bg: #ff8800;
+    --button-delete-border: #ffffff;
+    --button-cancel-bg: #00ccff;
+    --button-cancel-border: #ffffff;
+}
+
+body.theme-ocean {
+    --bg: #f2fbff;
+    --text: #12344b;
+    --header-bg: #dff3fb;
+    --header-border: #b3dcea;
+    --panel-border: #b3dcea;
+    --footer-text: #3f6980;
+    --input-bg: #ffffff;
+    --input-border: #8ec2d4;
+    --task-bg: #ffffff;
+    --task-border: #2f7ea2;
+    --task-text: #12344b;
+    --stage-current: rgba(255, 177, 66, 0.2);
+    --stage-ongoing: rgba(66, 170, 210, 0.22);
+    --stage-backlog: rgba(91, 130, 245, 0.18);
+    --menu-bg: #083349;
+    --menu-link: #abd9ee;
+    --menu-link-hover: #ffffff;
+    --menu-text: #d2edf8;
+    --button-bg: #2ea878;
+    --button-border: #1e6f4f;
+    --button-delete-bg: #de754f;
+    --button-delete-border: #8a4129;
+    --button-cancel-bg: #3487bd;
+    --button-cancel-border: #205779;
+}
+
+body.theme-sepia {
+    --bg: #f7f1e4;
+    --text: #4c3b2a;
+    --header-bg: #eadfca;
+    --header-border: #cdbb97;
+    --panel-border: #cdbb97;
+    --footer-text: #7a6249;
+    --input-bg: #fffaf0;
+    --input-border: #c8b38a;
+    --task-bg: #fff8e8;
+    --task-border: #8c6b3f;
+    --task-text: #4c3b2a;
+    --stage-current: rgba(202, 131, 54, 0.2);
+    --stage-ongoing: rgba(153, 136, 102, 0.2);
+    --stage-backlog: rgba(125, 92, 61, 0.2);
+    --menu-bg: #4b3a29;
+    --menu-link: #e5d6bd;
+    --menu-link-hover: #fff8ea;
+    --menu-text: #f3e8d1;
+    --button-bg: #88a164;
+    --button-border: #55663b;
+    --button-delete-bg: #c77f49;
+    --button-delete-border: #7d4c28;
+    --button-cancel-bg: #5f85b3;
+    --button-cancel-border: #395372;
+}
+
 body > section, body > form, footer {
     width: 90%;
     margin: auto;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
 }
 
 a {
@@ -17,14 +170,14 @@ a {
 header {
     margin: 0 0 2rem 0;
     padding: .1rem 1.5rem;
-    background: #eee;
-    border-bottom: 1px groove #eee;
+    background: var(--header-bg);
+    border-bottom: 1px groove var(--header-border);
     text-align: left;
 }
 
 footer {
     font-size: .8rem;
-    color: #666;
+    color: var(--footer-text);
     margin-top: 5rem;
     text-align: right;
 }
@@ -67,7 +220,9 @@ textarea {
     text-overflow: "";
     line-height: 1;
     padding: 5px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--input-border);
+    background-color: var(--input-bg);
+    color: var(--text);
     display: block;
     width: 100%;
     margin: .09em 0;
@@ -78,7 +233,7 @@ input[type=checkbox] {
     -moz-appearance: none;
     -ms-appearance: none;
     appearance: none;
-    background-color: #fff;
+    background-color: var(--input-bg);
     width: 1.5em;
     height: 1.5em;
     border: 1px solid #bbb;
@@ -131,10 +286,10 @@ label {
 }
 
 button[type=button] {
-    color: white;
+    color: var(--button-text);
     font: inherit;
-    background: lightgreen;
-    border: 2px solid darkolivegreen;
+    background: var(--button-bg);
+    border: 2px solid var(--button-border);
     display: block;
     border-radius: .5em;
     white-space: nowrap
@@ -150,14 +305,14 @@ button[type=button] {
 }
 
 #delete-button {
-    background-color: coral !important;
-    border: 2px solid indianred;
+    background-color: var(--button-delete-bg) !important;
+    border: 2px solid var(--button-delete-border);
     float: left;
 }
 
 #cancel-button {
-    background-color: dodgerblue !important;
-    border: 2px solid darkblue;
+    background-color: var(--button-cancel-bg) !important;
+    border: 2px solid var(--button-cancel-border);
     float: unset;
 }
 
@@ -201,39 +356,40 @@ button[type=button] {
 }
 
 #current-tasks {
-    background-color: rgba(255, 140, 0, 0.2);
+    background-color: var(--stage-current);
     z-index: -1;
 }
 
 #ongoing-tasks {
-    background-color: rgba(127, 255, 212, 0.2);
+    background-color: var(--stage-ongoing);
 }
 
 #backlog-tasks {
-    background-color: rgba(100, 149, 237, 0.2);
+    background-color: var(--stage-backlog);
 }
 
 .task {
     display: block;
-    background-color: white !important;
-    border: darkgoldenrod solid 2px;
+    background-color: var(--task-bg) !important;
+    border: var(--task-border) solid 2px;
     border-radius: .5em;
     padding: .3em;
-    color: #222222;
+    color: var(--task-text);
 }
 
 .overdue {
-    background-color: lightcoral !important;
-    border: darkred solid 2px !important;
-    color: white !important;
+    background-color: var(--overdue-bg) !important;
+    border: var(--overdue-border) solid 2px !important;
+    color: var(--overdue-text) !important;
 }
 
 select {
-    background: url(../imgs/tri.svg) 98.5% center no-repeat, -webkit-linear-gradient(top, rgb(255, 255, 255), rgb(230, 231, 232));
-    background: url(../imgs/tri.svg) 98.5% center no-repeat, -moz-linear-gradient(top, rgb(255, 255, 255), rgb(230, 231, 232));
-    background: url(../imgs/tri.svg) 98.5% center no-repeat, -ms-linear-gradient(top, rgb(255, 255, 255), rgb(230, 231, 232));
-    background: url(../imgs/tri.svg) 98.5% center no-repeat, linear-gradient(top, rgb(255, 255, 255), rgb(230, 231, 232));
-    background-size: 10px 11px, 100% 100%;
+    background-color: var(--input-bg);
+    color: var(--text);
+    background-image: url(../imgs/tri.svg);
+    background-position: 98.5% center;
+    background-repeat: no-repeat;
+    background-size: 10px 11px;
     padding: 5px;
 }
 
@@ -242,7 +398,7 @@ select {
 }
 
 #list {
-    border: 1px solid #ccc;
+    border: 1px solid var(--panel-border);
     width: 100%;
     border-collapse: collapse;
     margin: auto;
@@ -280,7 +436,7 @@ select {
     z-index: 1;
     top: 0;
     left: 0;
-    background-color: #111;
+    background-color: var(--menu-bg);
     overflow-x: hidden;
     transition: 0.5s;
     padding-top: 60px;
@@ -290,13 +446,31 @@ select {
     padding: 8px 8px 8px 32px;
     text-decoration: none;
     font-size: 25px;
-    color: #818181;
+    color: var(--menu-link);
     display: block;
     transition: 0.3s;
 }
 
 .sidenav a:hover {
-    color: #f2f2f2;
+    color: var(--menu-link-hover);
+}
+
+.settings-panel {
+    padding: 8px 16px 8px 32px;
+    color: var(--menu-text);
+}
+
+.settings-panel label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.settings-panel label + select + label {
+    margin-top: 12px;
+}
+
+.settings-panel select {
+    width: calc(100% - 16px);
 }
 
 .sidenav .closebtn {

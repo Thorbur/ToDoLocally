@@ -12,47 +12,73 @@
 
 <div id="menuSidenav" class="sidenav">
     <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-    <a href="javascript:void(0)" onclick="exportData()">Export</a>
-    <a href="javascript:void(0)" onclick="importData()">Import</a>
-    <a href="javascript:void(0)" onclick="sendToSocketServer()">Send to Socket</a>
+    <a id="menu-export-link" href="javascript:void(0)" onclick="exportData()">Export</a>
+    <a id="menu-import-link" href="javascript:void(0)" onclick="importData()">Import</a>
+    <a id="menu-restore-link" href="javascript:void(0)" onclick="restoreBackup()">Restore backup</a>
     <input id="import-file" type="file" onchange="processFile(this.files)">
-    <a href="#">Settings</a>
+    <a id="menu-settings-link" href="javascript:void(0)" onclick="toggleSettingsPanel()">Settings</a>
+    <div id="settings-panel" class="settings-panel hidden">
+        <label id="settings-language-label" for="language-select">Language</label>
+        <select id="language-select" onchange="changeLanguage(this.value)">
+            <option value="en">English</option>
+            <option value="de">Deutsch</option>
+            <option value="zh">中文</option>
+            <option value="fr">Français</option>
+            <option value="es">Español</option>
+            <option value="it">Italiano</option>
+            <option value="ar">العربية</option>
+            <option value="fa">فارسی</option>
+            <option value="pt">Português</option>
+            <option value="hi">हिन्दी</option>
+            <option value="uk">Українська</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+        </select>
+        <label id="settings-theme-label" for="theme-select">Theme</label>
+        <select id="theme-select" onchange="changeTheme(this.value)">
+            <option id="theme-option-default" value="default">Default</option>
+            <option id="theme-option-dark" value="dark">Dark mode</option>
+            <option id="theme-option-high-contrast" value="high-contrast">High contrast</option>
+            <option id="theme-option-ocean" value="ocean">Ocean</option>
+            <option id="theme-option-sepia" value="sepia">Sepia</option>
+        </select>
+    </div>
 </div>
 
-<header><div><span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776; menu</span><h1 id="app-title">ToDoLocally</h1></div></header>
+<header><div><span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776; <span id="menu-toggle-label">Menu</span></span><h1 id="app-title">ToDoLocally</h1></div></header>
 
 <form id="addNew" class="hidden" data-mode="add">
     <div>
         <input type="hidden" name="key" id="key" value="">
-        <label for="task">Summary *</label>
+        <label id="label-task" for="task">Summary *</label>
         <input type="text" name="task" id="task" value="" required>
     </div>
     <div>
         <span id="stage-label">Task stage</span>
         <p id="stage-display"></p>
-        <label for="status">Done</label>
+        <label id="label-status" for="status">Done</label>
         <input type="checkbox" id="status" name="status" value="">
         <input type="hidden" name="resolved" id="resolved" value="">
-        <label for="display">Hidden</label>
+        <label id="label-display" for="display">Hidden</label>
         <input type="checkbox" id="display" name="display" value="">
     </div>
     <div>
-        <label for="due">Due date</label>
+        <label id="label-due" for="due">Due date</label>
         <input type="date" id="due" name="due" value="">
     </div>
 
     <div>
-        <label for="priority">Priority</label>
+        <label id="label-priority" for="priority">Priority</label>
         <select id="priority" name="priority">
-            <option value="0">None</option>
-            <option value="1">Low</option>
-            <option value="2">Medium</option>
-            <option value="3">High</option>
+            <option id="priority-option-0" value="0">None</option>
+            <option id="priority-option-1" value="1">Low</option>
+            <option id="priority-option-2" value="2">Medium</option>
+            <option id="priority-option-3" value="3">High</option>
         </select>
     </div>
 
     <div>
-        <label for="notes">Notes</label>
+        <label id="label-notes" for="notes">Notes</label>
         <textarea id="notes" name="notes" cols="30" rows="3"></textarea>
         <div>
             <button type="button" class="submit" id="save-button">Save</button>
@@ -78,19 +104,19 @@
                     <button class="add-button" type="button" id="showadd-current"
                             onclick="showNewForm('current', false)">+
                     </button>
-                    Current tasks
+                    <span id="column-current">Current tasks</span>
                 </th>
                 <th>
                     <button class="add-button" type="button" id="showadd-ongoing"
                             onclick="showNewForm('ongoing', false)">+
                     </button>
-                    Ongoing
+                    <span id="column-ongoing">Ongoing</span>
                 </th>
                 <th>
                     <button class="add-button" type="button" id="showadd-backlog"
                             onclick="showNewForm('backlog', false)">+
                     </button>
-                    Backlog
+                    <span id="column-backlog">Backlog</span>
                 </th>
             </tr>
             </thead>

@@ -16,10 +16,46 @@ A public-domain licensed task manager built using IndexedDB.
 - Highlighting overdue tasks
 - Attribute based search of tasks
 - Export & Import of task database
-- Optional regular backup of task database to a network service
+- Automatic local backup after each change
+- Restore backup from the menu
+- Settings menu with language selection (English, German, Chinese, French, Spanish, Italian, Arabic, Persian, Portuguese, Hindi, Ukrainian, Japanese, Korean)
+- Settings menu with theme selection (Default, Dark mode, High contrast, Ocean, Sepia)
+
+#### Backup and restore
+- Backups are written automatically after every successful task change.
+- When the app runs via `http://` or `https://`, backups are stored in the browser's Origin Private File System (OPFS) as `todo-backup.json`.
+- When the app runs via `file://`, backups are stored in `localStorage` under `todo-backup-json`.
+- The menu entry `Restore backup` replaces the current task database with the latest local backup.
+
+#### Settings
+- **Language**: Choose the interface language from the Settings panel in the side menu.
+- **Theme**: Choose between `Default`, `Dark mode`, `High contrast`, `Ocean`, and `Sepia`.
+- Both language and theme preferences are stored in `localStorage` and are restored automatically on next launch.
+
+#### Hosting / local server
+Running from a local HTTP server is recommended, especially to use OPFS backup support.
+
+Available helper scripts:
+- `serve.ps1` for Windows (PowerShell)
+- `serve-linux.sh` for Linux (bash)
+- `serve-macos.sh` for macOS (bash)
+
+Default URL and port:
+- `http://localhost:8999/`
+
+Examples:
+- Windows (PowerShell): `./serve.ps1`
+- Linux: `chmod +x serve-linux.sh && ./serve-linux.sh`
+- macOS: `chmod +x serve-macos.sh && ./serve-macos.sh`
+
+Optional arguments for Linux/macOS scripts:
+- `./serve-linux.sh <port> <root>`
+- `./serve-macos.sh <port> <root>`
+
+If you open `index.html` directly via `file://`, the app still works and backups are stored in `localStorage` instead of OPFS.
 
 #### Upcoming features:
-- Optional Synchronization over network
+- Optional Synchronization with a cloud storage provider (e.g. Nextcloud, Scaleway, Proton Drive or Koofr)
 - Encryption of task database
 
 #### Searching

@@ -2,7 +2,12 @@
 let showNewForm = function (stage, edit) {
     let addNewForm = document.getElementById("addNew");
     let stageDisplay = document.getElementById("stage-display");
-    stageDisplay.innerText = stage;
+    stageDisplay.dataset.stage = stage;
+    if (typeof getLocalizedStageLabel === 'function') {
+        stageDisplay.innerText = getLocalizedStageLabel(stage);
+    } else {
+        stageDisplay.innerText = stage;
+    }
     if (addNewForm.classList.contains("hidden")) {
         addNewForm.classList.remove('hidden');
     }

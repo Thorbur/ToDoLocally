@@ -18,6 +18,607 @@ let backbtn = document.getElementById("back-button");
 
 /* Global variables */
 let displayMode = "normal";
+const OPFS_BACKUP_FILE_NAME = "todo-backup.json";
+const LOCALSTORAGE_BACKUP_KEY = "todo-backup-json";
+const UI_LANGUAGE_KEY = "todo-ui-language";
+const UI_THEME_KEY = "todo-ui-theme";
+let backupDebounceTimer = null;
+let currentLanguage = "en";
+let currentTheme = "default";
+
+const AVAILABLE_THEMES = new Set(["default", "dark", "high-contrast", "ocean", "sepia"]);
+
+const RTL_LANGUAGES = new Set(["ar", "fa"]);
+
+const TRANSLATIONS = {
+    en: {
+        menu: "Menu",
+        export: "Export",
+        import: "Import",
+        restore_backup: "Restore backup",
+        settings: "Settings",
+        language: "Language",
+        theme: "Theme",
+        theme_default: "Default",
+        theme_dark: "Dark mode",
+        theme_high_contrast: "High contrast",
+        theme_ocean: "Ocean",
+        theme_sepia: "Sepia",
+        summary: "Summary *",
+        task_stage: "Task stage",
+        done: "Done",
+        hidden: "Hidden",
+        due_date: "Due date",
+        priority: "Priority",
+        notes: "Notes",
+        save: "Save",
+        delete: "Delete",
+        cancel: "Cancel",
+        search: "Search",
+        back_to_tasks: "Back to task view",
+        current_tasks: "Current tasks",
+        ongoing: "Ongoing",
+        backlog: "Backlog",
+        stage_current: "Current",
+        stage_ongoing: "Ongoing",
+        stage_backlog: "Backlog",
+        priority_none: "None",
+        priority_low: "Low",
+        priority_medium: "Medium",
+        priority_high: "High",
+        no_due_date: "No due date",
+        no_matching_tasks: "No matching tasks have been found...",
+        restore_backup_error: "Could not restore backup. No backup found or file is invalid."
+    },
+    de: {
+        menu: "Menü",
+        export: "Exportieren",
+        import: "Importieren",
+        restore_backup: "Sicherung wiederherstellen",
+        settings: "Einstellungen",
+        language: "Sprache",
+        summary: "Zusammenfassung *",
+        task_stage: "Aufgabenphase",
+        done: "Erledigt",
+        hidden: "Versteckt",
+        due_date: "Fälligkeitsdatum",
+        priority: "Priorität",
+        notes: "Notizen",
+        save: "Speichern",
+        delete: "Löschen",
+        cancel: "Abbrechen",
+        search: "Suchen",
+        back_to_tasks: "Zur Aufgabenansicht",
+        current_tasks: "Aktuelle Aufgaben",
+        ongoing: "In Bearbeitung",
+        backlog: "Backlog",
+        stage_current: "Aktuell",
+        stage_ongoing: "In Bearbeitung",
+        stage_backlog: "Backlog",
+        priority_none: "Keine",
+        priority_low: "Niedrig",
+        priority_medium: "Mittel",
+        priority_high: "Hoch",
+        no_due_date: "Kein Fälligkeitsdatum",
+        no_matching_tasks: "Keine passenden Aufgaben gefunden...",
+        restore_backup_error: "Sicherung konnte nicht wiederhergestellt werden. Keine Sicherung gefunden oder Datei ungültig."
+    },
+    zh: {
+        menu: "菜单",
+        export: "导出",
+        import: "导入",
+        restore_backup: "恢复备份",
+        settings: "设置",
+        language: "语言",
+        summary: "摘要 *",
+        task_stage: "任务阶段",
+        done: "已完成",
+        hidden: "隐藏",
+        due_date: "截止日期",
+        priority: "优先级",
+        notes: "备注",
+        save: "保存",
+        delete: "删除",
+        cancel: "取消",
+        search: "搜索",
+        back_to_tasks: "返回任务视图",
+        current_tasks: "当前任务",
+        ongoing: "进行中",
+        backlog: "待办",
+        stage_current: "当前",
+        stage_ongoing: "进行中",
+        stage_backlog: "待办",
+        priority_none: "无",
+        priority_low: "低",
+        priority_medium: "中",
+        priority_high: "高",
+        no_due_date: "无截止日期",
+        no_matching_tasks: "未找到匹配的任务...",
+        restore_backup_error: "无法恢复备份。未找到备份或文件无效。"
+    },
+    fr: {
+        menu: "Menu",
+        export: "Exporter",
+        import: "Importer",
+        restore_backup: "Restaurer la sauvegarde",
+        settings: "Parametres",
+        language: "Langue",
+        summary: "Resume *",
+        task_stage: "Etape de tache",
+        done: "Termine",
+        hidden: "Cache",
+        due_date: "Date limite",
+        priority: "Priorite",
+        notes: "Notes",
+        save: "Enregistrer",
+        delete: "Supprimer",
+        cancel: "Annuler",
+        search: "Rechercher",
+        back_to_tasks: "Retour a la vue des taches",
+        current_tasks: "Taches actuelles",
+        ongoing: "En cours",
+        backlog: "Arriere-plan",
+        stage_current: "Actuel",
+        stage_ongoing: "En cours",
+        stage_backlog: "Arriere-plan",
+        priority_none: "Aucune",
+        priority_low: "Basse",
+        priority_medium: "Moyenne",
+        priority_high: "Haute",
+        no_due_date: "Pas de date limite",
+        no_matching_tasks: "Aucune tache correspondante trouvee...",
+        restore_backup_error: "Impossible de restaurer la sauvegarde. Aucune sauvegarde trouvee ou fichier invalide."
+    },
+    es: {
+        menu: "Menu",
+        export: "Exportar",
+        import: "Importar",
+        restore_backup: "Restaurar copia",
+        settings: "Configuracion",
+        language: "Idioma",
+        summary: "Resumen *",
+        task_stage: "Etapa de tarea",
+        done: "Hecho",
+        hidden: "Oculto",
+        due_date: "Fecha limite",
+        priority: "Prioridad",
+        notes: "Notas",
+        save: "Guardar",
+        delete: "Eliminar",
+        cancel: "Cancelar",
+        search: "Buscar",
+        back_to_tasks: "Volver a la vista de tareas",
+        current_tasks: "Tareas actuales",
+        ongoing: "En curso",
+        backlog: "Pendientes",
+        stage_current: "Actual",
+        stage_ongoing: "En curso",
+        stage_backlog: "Pendientes",
+        priority_none: "Ninguna",
+        priority_low: "Baja",
+        priority_medium: "Media",
+        priority_high: "Alta",
+        no_due_date: "Sin fecha limite",
+        no_matching_tasks: "No se encontraron tareas coincidentes...",
+        restore_backup_error: "No se pudo restaurar la copia. No se encontro copia o el archivo es invalido."
+    },
+    it: {
+        menu: "Menu",
+        export: "Esporta",
+        import: "Importa",
+        restore_backup: "Ripristina backup",
+        settings: "Impostazioni",
+        language: "Lingua",
+        summary: "Riepilogo *",
+        task_stage: "Fase attivita",
+        done: "Fatto",
+        hidden: "Nascosto",
+        due_date: "Data di scadenza",
+        priority: "Priorita",
+        notes: "Note",
+        save: "Salva",
+        delete: "Elimina",
+        cancel: "Annulla",
+        search: "Cerca",
+        back_to_tasks: "Torna alla vista attivita",
+        current_tasks: "Attivita correnti",
+        ongoing: "In corso",
+        backlog: "Arretrato",
+        stage_current: "Corrente",
+        stage_ongoing: "In corso",
+        stage_backlog: "Arretrato",
+        priority_none: "Nessuna",
+        priority_low: "Bassa",
+        priority_medium: "Media",
+        priority_high: "Alta",
+        no_due_date: "Nessuna scadenza",
+        no_matching_tasks: "Nessuna attivita corrispondente trovata...",
+        restore_backup_error: "Impossibile ripristinare il backup. Nessun backup trovato o file non valido."
+    },
+    ar: {
+        menu: "القائمة",
+        export: "تصدير",
+        import: "استيراد",
+        restore_backup: "استعادة النسخة الاحتياطية",
+        settings: "الإعدادات",
+        language: "اللغة",
+        summary: "الملخص *",
+        task_stage: "مرحلة المهمة",
+        done: "مكتمل",
+        hidden: "مخفي",
+        due_date: "تاريخ الاستحقاق",
+        priority: "الأولوية",
+        notes: "ملاحظات",
+        save: "حفظ",
+        delete: "حذف",
+        cancel: "إلغاء",
+        search: "بحث",
+        back_to_tasks: "العودة إلى عرض المهام",
+        current_tasks: "المهام الحالية",
+        ongoing: "قيد التنفيذ",
+        backlog: "المهام المؤجلة",
+        stage_current: "حالية",
+        stage_ongoing: "قيد التنفيذ",
+        stage_backlog: "مؤجلة",
+        priority_none: "لا شيء",
+        priority_low: "منخفض",
+        priority_medium: "متوسط",
+        priority_high: "مرتفع",
+        no_due_date: "لا يوجد تاريخ استحقاق",
+        no_matching_tasks: "لم يتم العثور على مهام مطابقة...",
+        restore_backup_error: "تعذر استعادة النسخة الاحتياطية. لا توجد نسخة أو الملف غير صالح."
+    },
+    fa: {
+        menu: "منو",
+        export: "خروجی",
+        import: "ورودی",
+        restore_backup: "بازیابی پشتیبان",
+        settings: "تنظیمات",
+        language: "زبان",
+        summary: "خلاصه *",
+        task_stage: "مرحله کار",
+        done: "انجام شد",
+        hidden: "پنهان",
+        due_date: "تاریخ سررسید",
+        priority: "اولویت",
+        notes: "یادداشت",
+        save: "ذخیره",
+        delete: "حذف",
+        cancel: "لغو",
+        search: "جستجو",
+        back_to_tasks: "بازگشت به نمای کارها",
+        current_tasks: "کارهای فعلی",
+        ongoing: "در حال انجام",
+        backlog: "پشت صف",
+        stage_current: "فعلی",
+        stage_ongoing: "در حال انجام",
+        stage_backlog: "پشت صف",
+        priority_none: "هیچ",
+        priority_low: "کم",
+        priority_medium: "متوسط",
+        priority_high: "زیاد",
+        no_due_date: "بدون تاریخ سررسید",
+        no_matching_tasks: "هیچ کار مطابقی پیدا نشد...",
+        restore_backup_error: "بازیابی پشتیبان ممکن نشد. پشتیبان پیدا نشد یا فایل نامعتبر است."
+    },
+    pt: {
+        menu: "Menu",
+        export: "Exportar",
+        import: "Importar",
+        restore_backup: "Restaurar backup",
+        settings: "Configuracoes",
+        language: "Idioma",
+        summary: "Resumo *",
+        task_stage: "Etapa da tarefa",
+        done: "Concluida",
+        hidden: "Oculta",
+        due_date: "Data de vencimento",
+        priority: "Prioridade",
+        notes: "Notas",
+        save: "Salvar",
+        delete: "Excluir",
+        cancel: "Cancelar",
+        search: "Pesquisar",
+        back_to_tasks: "Voltar para a lista",
+        current_tasks: "Tarefas atuais",
+        ongoing: "Em andamento",
+        backlog: "Pendencias",
+        stage_current: "Atual",
+        stage_ongoing: "Em andamento",
+        stage_backlog: "Pendencias",
+        priority_none: "Nenhuma",
+        priority_low: "Baixa",
+        priority_medium: "Media",
+        priority_high: "Alta",
+        no_due_date: "Sem data de vencimento",
+        no_matching_tasks: "Nenhuma tarefa correspondente encontrada...",
+        restore_backup_error: "Nao foi possivel restaurar o backup. Nenhum backup encontrado ou arquivo invalido."
+    },
+    hi: {
+        menu: "मेनू",
+        export: "निर्यात",
+        import: "आयात",
+        restore_backup: "बैकअप पुनर्स्थापित करें",
+        settings: "सेटिंग्स",
+        language: "भाषा",
+        summary: "सारांश *",
+        task_stage: "कार्य चरण",
+        done: "पूर्ण",
+        hidden: "छिपा हुआ",
+        due_date: "नियत तिथि",
+        priority: "प्राथमिकता",
+        notes: "टिप्पणियां",
+        save: "सहेजें",
+        delete: "हटाएं",
+        cancel: "रद्द करें",
+        search: "खोजें",
+        back_to_tasks: "कार्य दृश्य पर वापस जाएं",
+        current_tasks: "वर्तमान कार्य",
+        ongoing: "प्रगति में",
+        backlog: "बैकलॉग",
+        stage_current: "वर्तमान",
+        stage_ongoing: "प्रगति में",
+        stage_backlog: "बैकलॉग",
+        priority_none: "कोई नहीं",
+        priority_low: "कम",
+        priority_medium: "मध्यम",
+        priority_high: "उच्च",
+        no_due_date: "कोई नियत तिथि नहीं",
+        no_matching_tasks: "कोई मेल खाती कार्य नहीं मिली...",
+        restore_backup_error: "बैकअप पुनर्स्थापित नहीं हो सका। बैकअप नहीं मिला या फाइल अमान्य है।"
+    },
+    uk: {
+        menu: "Меню",
+        export: "Експорт",
+        import: "Імпорт",
+        restore_backup: "Відновити резервну копію",
+        settings: "Налаштування",
+        language: "Мова",
+        summary: "Підсумок *",
+        task_stage: "Етап задачі",
+        done: "Виконано",
+        hidden: "Приховано",
+        due_date: "Термін",
+        priority: "Пріоритет",
+        notes: "Нотатки",
+        save: "Зберегти",
+        delete: "Видалити",
+        cancel: "Скасувати",
+        search: "Пошук",
+        back_to_tasks: "Назад до задач",
+        current_tasks: "Поточні задачі",
+        ongoing: "У процесі",
+        backlog: "Беклог",
+        stage_current: "Поточні",
+        stage_ongoing: "У процесі",
+        stage_backlog: "Беклог",
+        priority_none: "Немає",
+        priority_low: "Низький",
+        priority_medium: "Середній",
+        priority_high: "Високий",
+        no_due_date: "Без терміну",
+        no_matching_tasks: "Відповідних задач не знайдено...",
+        restore_backup_error: "Не вдалося відновити резервну копію. Копію не знайдено або файл недійсний."
+    },
+    ja: {
+        menu: "メニュー",
+        export: "エクスポート",
+        import: "インポート",
+        restore_backup: "バックアップを復元",
+        settings: "設定",
+        language: "言語",
+        summary: "概要 *",
+        task_stage: "タスク段階",
+        done: "完了",
+        hidden: "非表示",
+        due_date: "期限",
+        priority: "優先度",
+        notes: "メモ",
+        save: "保存",
+        delete: "削除",
+        cancel: "キャンセル",
+        search: "検索",
+        back_to_tasks: "タスク表示に戻る",
+        current_tasks: "現在のタスク",
+        ongoing: "進行中",
+        backlog: "バックログ",
+        stage_current: "現在",
+        stage_ongoing: "進行中",
+        stage_backlog: "バックログ",
+        priority_none: "なし",
+        priority_low: "低",
+        priority_medium: "中",
+        priority_high: "高",
+        no_due_date: "期限なし",
+        no_matching_tasks: "一致するタスクが見つかりません...",
+        restore_backup_error: "バックアップを復元できませんでした。バックアップがないか、ファイルが無効です。"
+    },
+    ko: {
+        menu: "메뉴",
+        export: "내보내기",
+        import: "가져오기",
+        restore_backup: "백업 복원",
+        settings: "설정",
+        language: "언어",
+        summary: "요약 *",
+        task_stage: "작업 단계",
+        done: "완료",
+        hidden: "숨김",
+        due_date: "마감일",
+        priority: "우선순위",
+        notes: "메모",
+        save: "저장",
+        delete: "삭제",
+        cancel: "취소",
+        search: "검색",
+        back_to_tasks: "작업 보기로 돌아가기",
+        current_tasks: "현재 작업",
+        ongoing: "진행 중",
+        backlog: "백로그",
+        stage_current: "현재",
+        stage_ongoing: "진행 중",
+        stage_backlog: "백로그",
+        priority_none: "없음",
+        priority_low: "낮음",
+        priority_medium: "중간",
+        priority_high: "높음",
+        no_due_date: "마감일 없음",
+        no_matching_tasks: "일치하는 작업을 찾을 수 없습니다...",
+        restore_backup_error: "백업을 복원할 수 없습니다. 백업이 없거나 파일이 올바르지 않습니다."
+    }
+};
+
+function t(key) {
+    const lang = TRANSLATIONS[currentLanguage] || TRANSLATIONS.en;
+    return lang[key] || TRANSLATIONS.en[key] || key;
+}
+
+function getLocalizedStageLabel(stage) {
+    return t("stage_" + stage);
+}
+
+function mapPriorityForDisplay(priorityNumber) {
+    switch (priorityNumber) {
+        case 0:
+            return t("priority_none");
+        case 1:
+            return t("priority_low");
+        case 2:
+            return t("priority_medium");
+        case 3:
+            return t("priority_high");
+        default:
+            return t("priority_none");
+    }
+}
+
+function setText(id, text) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.textContent = text;
+    }
+}
+
+function toggleSettingsPanel() {
+    const settingsPanel = document.getElementById("settings-panel");
+    if (settingsPanel) {
+        settingsPanel.classList.toggle("hidden");
+    }
+}
+
+function applyTranslations() {
+    setText("menu-toggle-label", t("menu"));
+    setText("menu-export-link", t("export"));
+    setText("menu-import-link", t("import"));
+    setText("menu-restore-link", t("restore_backup"));
+    setText("menu-settings-link", t("settings"));
+    setText("settings-language-label", t("language"));
+    setText("settings-theme-label", t("theme"));
+    setText("theme-option-default", t("theme_default"));
+    setText("theme-option-dark", t("theme_dark"));
+    setText("theme-option-high-contrast", t("theme_high_contrast"));
+    setText("theme-option-ocean", t("theme_ocean"));
+    setText("theme-option-sepia", t("theme_sepia"));
+    setText("label-task", t("summary"));
+    setText("stage-label", t("task_stage"));
+    setText("label-status", t("done"));
+    setText("label-display", t("hidden"));
+    setText("label-due", t("due_date"));
+    setText("label-priority", t("priority"));
+    setText("label-notes", t("notes"));
+    setText("save-button", t("save"));
+    setText("delete-button", t("delete"));
+    setText("cancel-button", t("cancel"));
+    setText("search-button", t("search"));
+    setText("back-button", t("back_to_tasks"));
+    setText("column-current", t("current_tasks"));
+    setText("column-ongoing", t("ongoing"));
+    setText("column-backlog", t("backlog"));
+    setText("priority-option-0", t("priority_none"));
+    setText("priority-option-1", t("priority_low"));
+    setText("priority-option-2", t("priority_medium"));
+    setText("priority-option-3", t("priority_high"));
+
+    const stageDisplay = document.getElementById("stage-display");
+    if (stageDisplay && stageDisplay.dataset.stage) {
+        stageDisplay.innerText = getLocalizedStageLabel(stageDisplay.dataset.stage);
+    }
+}
+
+function applyDirection() {
+    const dir = RTL_LANGUAGES.has(currentLanguage) ? "rtl" : "ltr";
+    document.documentElement.setAttribute("dir", dir);
+}
+
+function changeLanguage(languageCode) {
+    if (!TRANSLATIONS[languageCode]) {
+        return;
+    }
+
+    currentLanguage = languageCode;
+    localStorage.setItem(UI_LANGUAGE_KEY, currentLanguage);
+    document.documentElement.lang = currentLanguage;
+
+    applyDirection();
+    applyTranslations();
+
+    if (dbobject) {
+        if (displayMode === "search") {
+            searchHandler();
+        } else {
+            displayTasks(dbobject);
+        }
+    }
+}
+
+function initLanguageSettings() {
+    const savedLanguage = localStorage.getItem(UI_LANGUAGE_KEY);
+    const initialLanguage = savedLanguage && TRANSLATIONS[savedLanguage] ? savedLanguage : "en";
+    const languageSelect = document.getElementById("language-select");
+
+    if (languageSelect) {
+        languageSelect.value = initialLanguage;
+    }
+
+    changeLanguage(initialLanguage);
+}
+
+function applyTheme() {
+    const classesToRemove = [];
+    for (const themeName of AVAILABLE_THEMES) {
+        classesToRemove.push("theme-" + themeName);
+    }
+    document.body.classList.remove(...classesToRemove);
+    document.body.classList.add("theme-" + currentTheme);
+}
+
+function changeTheme(themeCode) {
+    if (!AVAILABLE_THEMES.has(themeCode)) {
+        return;
+    }
+
+    currentTheme = themeCode;
+    localStorage.setItem(UI_THEME_KEY, currentTheme);
+
+    const themeSelect = document.getElementById("theme-select");
+    if (themeSelect && themeSelect.value !== currentTheme) {
+        themeSelect.value = currentTheme;
+    }
+
+    applyTheme();
+}
+
+function initThemeSettings() {
+    const savedTheme = localStorage.getItem(UI_THEME_KEY);
+    const initialTheme = savedTheme && AVAILABLE_THEMES.has(savedTheme) ? savedTheme : "default";
+    const themeSelect = document.getElementById("theme-select");
+
+    if (themeSelect) {
+        themeSelect.value = initialTheme;
+    }
+
+    changeTheme(initialTheme);
+}
 
 function allowDrop(ev) {
     ev.preventDefault();
@@ -40,6 +641,10 @@ function drop(ev, el) {
     request = index.openCursor(IDBKeyRange.lowerBound(0), 'next');
     request.onerror = function (event) {
         console.log("Drop " + data + " failed! " + event);
+    };
+
+    transaction.oncomplete = function () {
+        scheduleBackup();
     };
 
     request.onsuccess = function (successevent) {
@@ -216,6 +821,7 @@ function importFromJson(idbDatabase, json) {
 
 async function readFile(event) {
     await importFromJson(dbobject, event.target.result);
+    await backupData();
     location.reload();
 }
 
@@ -244,16 +850,138 @@ async function exportData() {
     a.click();
 }
 
-async function sendToSocketServer(){
-    // TODO: add exception handling
-    let exported = await exportToJson(dbobject);
-    const socket = new WebSocket('ws://localhost:8888'); // TODO: make connection string configurable
-    socket.addEventListener('message', function (event) {
-        console.log(event.data);
+function supportsOpfs() {
+    return !!(navigator.storage && navigator.storage.getDirectory);
+}
+
+function shouldUseLocalStorageBackup() {
+    return window.location.protocol === "file:";
+}
+
+function writeBackupToLocalStorage(data) {
+    localStorage.setItem(LOCALSTORAGE_BACKUP_KEY, data);
+}
+
+function readBackupFromLocalStorage() {
+    const backupData = localStorage.getItem(LOCALSTORAGE_BACKUP_KEY);
+    if (backupData === null) {
+        throw new Error("No backup found in localStorage.");
+    }
+    return backupData;
+}
+
+async function writeBackupToOpfs(data) {
+    if (!supportsOpfs()) {
+        console.warn("OPFS is not supported in this browser. Skipping backup.");
+        return;
+    }
+
+    const root = await navigator.storage.getDirectory();
+    const fileHandle = await root.getFileHandle(OPFS_BACKUP_FILE_NAME, {create: true});
+    const writable = await fileHandle.createWritable();
+    await writable.write(data);
+    await writable.close();
+}
+
+async function readBackupFromOpfs() {
+    if (!supportsOpfs()) {
+        throw new Error("OPFS is not supported in this browser.");
+    }
+
+    const root = await navigator.storage.getDirectory();
+    const fileHandle = await root.getFileHandle(OPFS_BACKUP_FILE_NAME);
+    const file = await fileHandle.getFile();
+    return file.text();
+}
+
+async function writeBackup(data) {
+    if (shouldUseLocalStorageBackup()) {
+        writeBackupToLocalStorage(data);
+        return;
+    }
+
+    if (supportsOpfs()) {
+        await writeBackupToOpfs(data);
+        return;
+    }
+
+    // Non-file contexts without OPFS support still get a local backup fallback.
+    console.warn("OPFS is not supported. Falling back to localStorage backup.");
+    writeBackupToLocalStorage(data);
+}
+
+async function readBackup() {
+    if (shouldUseLocalStorageBackup()) {
+        return readBackupFromLocalStorage();
+    }
+
+    if (supportsOpfs()) {
+        return readBackupFromOpfs();
+    }
+
+    console.warn("OPFS is not supported. Trying localStorage backup.");
+    return readBackupFromLocalStorage();
+}
+
+async function backupData() {
+    try {
+        const exported = await exportToJson(dbobject);
+        await writeBackup(exported);
+    } catch (error) {
+        console.error("Automatic backup failed", error);
+    }
+}
+
+function scheduleBackup() {
+    if (backupDebounceTimer !== null) {
+        window.clearTimeout(backupDebounceTimer);
+    }
+
+    // Batch quick consecutive edits into a single backup write.
+    backupDebounceTimer = window.setTimeout(function () {
+        backupDebounceTimer = null;
+        backupData();
+    }, 500);
+}
+
+async function replaceFromJson(idbDatabase, json) {
+    return new Promise((resolve, reject) => {
+        const importObject = JSON.parse(json);
+        const transaction = idbDatabase.transaction(
+            idbDatabase.objectStoreNames,
+            'readwrite'
+        );
+
+        transaction.addEventListener('error', reject);
+        transaction.addEventListener('complete', resolve);
+
+        for (const storeName of idbDatabase.objectStoreNames) {
+            const store = transaction.objectStore(storeName);
+            store.clear();
+
+            if (importObject[storeName] && importObject[storeName].length > 0) {
+                for (const toAdd of importObject[storeName]) {
+                    store.add(toAdd);
+                }
+            }
+        }
     });
-    socket.addEventListener('open', function (event) {
-        socket.send(exported.toString());
-    });
+}
+
+async function restoreBackup() {
+    try {
+        const backupJson = await readBackup();
+        await replaceFromJson(dbobject, backupJson);
+
+        if (displayMode === 'search') {
+            location.reload();
+        } else {
+            displayTasks(dbobject);
+        }
+    } catch (error) {
+        console.error("Restore backup failed", error);
+        alert(t("restore_backup_error"));
+    }
 }
 
 
@@ -340,7 +1068,7 @@ buildTask = function (recordobject) {
         // priority
         p = document.createElement('p');
         p.setAttribute('class', 'task-priority');
-        p.innerText = mapPriority(record.priority);
+        p.innerText = mapPriorityForDisplay(record.priority);
         div.appendChild(p);
 
         // hide button
@@ -358,7 +1086,7 @@ buildTask = function (recordobject) {
         if (record.due) {
             p.innerText = new Date(record.due).toDateString();
         } else {
-            p.innerText = "No due date";
+            p.innerText = t("no_due_date");
         }
         div.appendChild(p);
 
@@ -402,7 +1130,7 @@ addNewHandler = function (evt) {
     entry.priority = +fields.priority.value;
     entry.notes = fields.notes.value;
     entry.status = fields.status.checked ? "done" : "open";
-    entry.stage = document.getElementById('stage-display').innerText;
+    entry.stage = document.getElementById('stage-display').dataset.stage || document.getElementById('stage-display').innerText;
     entry.resolved = null;
     if (fields.status.checked) {
         console.log("Resolved val:");
@@ -443,6 +1171,7 @@ addNewHandler = function (evt) {
             displayTasks(dbobject);
         }
         resetForm();
+        scheduleBackup();
     };
 
     transaction.onerror = errorHandler;
@@ -457,6 +1186,9 @@ updateStatus = function (evt) {
 
         transaction = dbobject.transaction(['tasks'], 'readwrite');
         objectstore = transaction.objectStore('tasks');
+        transaction.oncomplete = function () {
+            scheduleBackup();
+        };
 
         request = objectstore.get(key);
 
@@ -607,7 +1339,7 @@ searchHandler = function () {
         transaction.oncomplete = function () {
             if (!found) {
                 let resultMessage = document.createElement("p");
-                resultMessage.innerText = "No matching tasks have been found...";
+                resultMessage.innerText = t("no_matching_tasks");
                 list.appendChild(resultMessage);
             } else {
                 /* Make all hidden elements visible in the search results */
@@ -665,6 +1397,10 @@ hideHandler = function (taskId) {
         let taskDiv = document.getElementById("task-" + taskId);
         taskDiv.setAttribute("class", "hidden");
     };
+
+    transaction.oncomplete = function () {
+        scheduleBackup();
+    };
 };
 
 deleteHandler = function (evt) {
@@ -685,6 +1421,7 @@ deleteHandler = function (evt) {
         hideNewForm();
         displayTasks(dbobject);
         resetForm();
+        scheduleBackup();
     };
     transaction.onerror = errorHandler;
 };
@@ -762,8 +1499,6 @@ savebtn.addEventListener('click', addNewHandler);
 backbtn.addEventListener('click', function () {
     location.reload();
 });
+initThemeSettings();
+initLanguageSettings();
 window.addEventListener('load', init);
-
-// regularly sending the data to the WebSocketServer for backup
-// TODO: instead of regular backup add a backup on every change
-window.setInterval(sendToSocketServer, 60000); // TODO: add switch and make configurable
