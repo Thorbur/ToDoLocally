@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>ToDoLocally</title>
+    <link rel="icon" type="image/svg+xml" href="imgs/logo.svg">
     <link rel="stylesheet" href="css/style.css">
     <script src="js/bootup.js"></script>
     <script src="js/nearley.js"></script>
@@ -45,11 +46,21 @@
     </div>
 </div>
 
-<header><div><span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776; <span id="menu-toggle-label">Menu</span></span><h1 id="app-title">ToDoLocally</h1></div></header>
+<header>
+    <div>
+        <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776; <span id="menu-toggle-label">Menu</span></span>
+        <div class="app-brand">
+            <img id="app-logo" src="imgs/logo.svg" alt="ToDoLocally logo">
+            <h1 id="app-title">ToDoLocally</h1>
+        </div>
+    </div>
+</header>
 
 <form id="addNew" class="hidden" data-mode="add">
     <div>
         <input type="hidden" name="key" id="key" value="">
+        <input type="hidden" name="sort_order" id="sort_order" value="">
+        <input type="hidden" name="old_stage" id="old_stage" value="">
         <label id="label-task" for="task">Summary *</label>
         <input type="text" name="task" id="task" value="" required>
     </div>
@@ -78,6 +89,16 @@
     </div>
 
     <div>
+        <label id="label-ticket-needed" for="ticket_needed">Ticket needed</label>
+        <input type="checkbox" id="ticket_needed" name="ticket_needed" value="">
+    </div>
+
+    <div>
+        <label id="label-ticket-reference" for="ticket_reference">Ticket reference</label>
+        <input type="text" id="ticket_reference" name="ticket_reference" value="">
+    </div>
+
+    <div>
         <label id="label-notes" for="notes">Notes</label>
         <textarea id="notes" name="notes" cols="30" rows="3"></textarea>
         <div>
@@ -91,8 +112,18 @@
 <br>
 <section id="tasklist">
     <div id="search" class="search-form">
-        <button type="button" class="submit" id="search-button">Search</button>
         <label for="find"></label><input type="search" id="find" name="find"/>
+        <button type="button" id="search-help-button" title="?" aria-label="Search help" onclick="openSearchHelp()">?</button>
+        <button type="button" class="submit" id="search-button">Search</button>
+    </div>
+    <div id="search-help-modal" class="search-help-modal hidden" role="dialog" aria-modal="true" aria-labelledby="search-help-title">
+        <div class="search-help-dialog">
+            <div class="search-help-header">
+                <h2 id="search-help-title">Search Help</h2>
+                <button type="button" id="search-help-close" class="search-help-close" onclick="closeSearchHelp()" aria-label="Close">x</button>
+            </div>
+            <div id="search-help-content" class="search-help-content"></div>
+        </div>
     </div>
     <br>
     <button id="back-button" class="hidden">Back to task view</button>

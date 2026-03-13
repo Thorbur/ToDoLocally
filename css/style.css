@@ -175,6 +175,13 @@ header {
     text-align: left;
 }
 
+header > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
 footer {
     font-size: .8rem;
     color: var(--footer-text);
@@ -323,41 +330,125 @@ button[type=button] {
 }
 
 .search-form {
-
+    display: flex;
+    align-items: center;
+    gap: .4rem;
 }
 
 #find {
-    width: calc(100% - 80px);
+    flex: 1;
+    width: auto;
     overflow: hidden;
 }
 
 #search-button {
     width: 70px;
-    float: right;
+    float: none;
+}
+
+#search-help-button {
+    width: 2.2rem;
+    min-width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    background: var(--button-bg);
+    border: 2px solid var(--button-border);
+    color: var(--button-text);
+    font-weight: bold;
+    padding: 0;
+}
+
+.search-help-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.search-help-dialog {
+    width: min(52rem, 96vw);
+    max-height: 85vh;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--panel-border);
+    border-radius: .6rem;
+    overflow: hidden;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, .3);
+}
+
+.search-help-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .8rem 1rem;
+    border-bottom: 1px solid var(--panel-border);
+    background: var(--header-bg);
+}
+
+.search-help-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.search-help-close {
+    width: 2rem;
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0;
+    line-height: 1;
+    background: var(--button-delete-bg);
+    border: 2px solid var(--button-delete-border);
+}
+
+.search-help-content {
+    padding: 1rem;
+    max-height: calc(85vh - 3.6rem);
+    overflow: auto;
+}
+
+.search-help-content h3 {
+    margin-top: 1.2rem;
+    margin-bottom: .5rem;
+}
+
+.search-help-content p,
+.search-help-content li {
+    line-height: 1.45;
 }
 
 
 #task-table {
     table-layout: fixed;
     width: 100%;
-	height: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
-#task-table > tbody, td {
-	height: 100%;
-	vertical-align: top;
+#task-table > tbody > tr {
+    height: 50vh;
+}
+
+#task-table > tbody > tr > td {
+    height: 100%;
+    vertical-align: top;
+    padding: 0.25rem;
 }
 
 .task-area {
-    min-height: 50vh;
+    min-height: 0;
     border-radius: .5em;
     padding: .5em;
-	height: 100%;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 #current-tasks {
     background-color: var(--stage-current);
-    z-index: -1;
 }
 
 #ongoing-tasks {
@@ -375,6 +466,22 @@ button[type=button] {
     border-radius: .5em;
     padding: .3em;
     color: var(--task-text);
+}
+
+.task-ticket-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+}
+
+.task-ticket-needed,
+.task-ticket-reference {
+    margin: .2rem 0;
+}
+
+.task-ticket-reference {
+    text-align: right;
 }
 
 .overdue {
@@ -400,8 +507,10 @@ select {
 #list {
     border: 1px solid var(--panel-border);
     width: 100%;
-    border-collapse: collapse;
     margin: auto;
+    padding: 0.2rem;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 #addNew{
@@ -487,8 +596,20 @@ select {
 }
 
 #app-title {
-    float: right;
+    margin: 0;
     font-size: xx-large;
+}
+
+.app-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+}
+
+#app-logo {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: .5rem;
 }
 
 #import-file {

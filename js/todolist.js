@@ -25,6 +25,57 @@ const UI_THEME_KEY = "todo-ui-theme";
 let backupDebounceTimer = null;
 let currentLanguage = "en";
 let currentTheme = "default";
+let draggedTaskId = null;
+let draggedFromStage = null;
+
+const SEARCH_HELP_HTML = `
+<p>Searching of tasks is possible by entering a search query in the search field. The parser is based on the Nearley framework.</p>
+
+<h3>Keywords</h3>
+<ul>
+    <li><code>title</code> = the title / summary of the task (text string)</li>
+    <li><code>notes</code> = the notes about the task (text string)</li>
+    <li><code>stage</code> = the stage the task is in (text string)</li>
+    <li><code>priority</code> = the priority of the task (text string)</li>
+    <li><code>ticket_reference</code> = the ticket reference string (text string)</li>
+    <li><code>due</code> = the due date of the task (date string)</li>
+    <li><code>resolved</code> = the resolution / completion date of the task (date string)</li>
+    <li><code>done</code> = if the task is completed (boolean)</li>
+    <li><code>hidden</code> = if the task is hidden (boolean)</li>
+    <li><code>ticket_needed</code> = if a ticket is needed (boolean)</li>
+    <li><code>id</code> = the ID of the task (number)</li>
+</ul>
+
+<h3>Operators</h3>
+<ul>
+    <li><code>&lt;</code> = smaller (date string, number)</li>
+    <li><code>&gt;</code> = greater (date string, number)</li>
+    <li><code>=</code> = equals (date string, text string, boolean, number)</li>
+    <li><code>!=</code> = not equals (date string, text string, boolean, number)</li>
+    <li><code>~</code> = contains (text string)</li>
+    <li><code>!~</code> = not contains (text string)</li>
+</ul>
+
+<h3>Allowed values</h3>
+<ul>
+    <li>Text string values must begin and end with double quotes (<code>"</code>) and may contain whitespace.</li>
+    <li>Double quotes inside text need escaping with a backslash (<code>\\"</code>).</li>
+    <li>Date string values must begin and end with double quotes. ISO date/timestamp format is recommended.</li>
+    <li>Dates are interpreted by JavaScript <code>Date.parse</code>, so common date formats should work.</li>
+    <li>Boolean values are <code>true</code> or <code>false</code> without quotes.</li>
+    <li>Number values are simple integers (<code>[0-9]+</code>).</li>
+</ul>
+
+<h3>Example queries</h3>
+<ul>
+    <li><code>title ~ "report"</code></li>
+    <li><code>priority = "high" and done = false</code></li>
+    <li><code>stage = "ongoing" and due &lt; "2026-12-31"</code></li>
+    <li><code>hidden = true or notes ~ "archive"</code></li>
+    <li><code>ticket_needed = true and ticket_reference ~ "ABC-"</code></li>
+    <li><code>id &gt; 10 and resolved != ""</code></li>
+</ul>
+`;
 
 const AVAILABLE_THEMES = new Set(["default", "dark", "high-contrast", "ocean", "sepia"]);
 
@@ -506,6 +557,43 @@ function toggleSettingsPanel() {
     }
 }
 
+function openSearchHelp() {
+    const modal = document.getElementById("search-help-modal");
+    if (modal) {
+        modal.classList.remove("hidden");
+    }
+}
+
+function closeSearchHelp() {
+    const modal = document.getElementById("search-help-modal");
+    if (modal) {
+        modal.classList.add("hidden");
+    }
+}
+
+function initSearchHelpPopup() {
+    const content = document.getElementById("search-help-content");
+    const modal = document.getElementById("search-help-modal");
+    if (content) {
+        // Keep docs bundled in the app so help works in file:// mode.
+        content.innerHTML = SEARCH_HELP_HTML;
+    }
+
+    if (modal) {
+        modal.addEventListener("click", function (event) {
+            if (event.target === modal) {
+                closeSearchHelp();
+            }
+        });
+    }
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+            closeSearchHelp();
+        }
+    });
+}
+
 function applyTranslations() {
     setText("menu-toggle-label", t("menu"));
     setText("menu-export-link", t("export"));
@@ -624,46 +712,155 @@ function allowDrop(ev) {
     ev.preventDefault();
 }
 
+function getStageNameFromArea(areaElement) {
+    return areaElement.id.replace("-tasks", "");
+}
+
+function getTaskKeyFromElement(taskElement) {
+    return parseInt(taskElement.id.replace("task-", ""));
+}
+
+function getDragAfterElement(container, y, draggedElementId) {
+    const draggableElements = [...container.querySelectorAll('.task')]
+        .filter(el => el.id !== draggedElementId);
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+
+        if (offset < 0 && offset > closest.offset) {
+            return {offset: offset, element: child};
+        }
+        return closest;
+    }, {offset: Number.NEGATIVE_INFINITY, element: null}).element;
+}
+
+function persistStageOrder(stageName) {
+    return new Promise((resolve, reject) => {
+        const stageArea = document.getElementById(stageName + "-tasks");
+        if (!stageArea) {
+            resolve();
+            return;
+        }
+
+        const taskElements = [...stageArea.querySelectorAll('.task')];
+        const transaction = dbobject.transaction(['tasks'], 'readwrite');
+        const objectstore = transaction.objectStore('tasks');
+
+        transaction.oncomplete = function () {
+            resolve();
+        };
+        transaction.onerror = function (event) {
+            reject(event);
+        };
+
+        taskElements.forEach((taskElement, order) => {
+            const taskKey = getTaskKeyFromElement(taskElement);
+            const getRequest = objectstore.get(taskKey);
+            getRequest.onsuccess = function (successEvent) {
+                const taskDataUpdate = successEvent.target.result;
+                if (!taskDataUpdate) {
+                    return;
+                }
+
+                taskDataUpdate.stage = stageName;
+                taskDataUpdate.sort_order = order;
+                objectstore.put(taskDataUpdate, taskKey);
+            };
+        });
+    });
+}
+
+async function persistTaskOrderForStages(stageNames) {
+    const uniqueStages = [...new Set(stageNames.filter(Boolean))];
+    for (const stageName of uniqueStages) {
+        await persistStageOrder(stageName);
+    }
+    scheduleBackup();
+}
+
+function getNextSortOrderForStage(stageName) {
+    return new Promise((resolve, reject) => {
+        let maxSortOrder = -1;
+        const transaction = dbobject.transaction(['tasks'], 'readonly');
+        const objectstore = transaction.objectStore('tasks');
+        const stageIndex = objectstore.index('stage');
+        const request = stageIndex.openCursor(IDBKeyRange.only(stageName), 'next');
+
+        request.onerror = function (event) {
+            reject(event);
+        };
+
+        request.onsuccess = function (successEvent) {
+            const cursor = successEvent.target.result;
+            if (cursor) {
+                const parsedSort = Number(cursor.value.sort_order);
+                const currentSort = Number.isFinite(parsedSort) ? parsedSort : -1;
+                if (currentSort > maxSortOrder) {
+                    maxSortOrder = currentSort;
+                }
+                cursor.continue();
+            } else {
+                resolve(maxSortOrder + 1);
+            }
+        };
+    });
+}
+
 function drag(ev) {
     ev.dataTransfer.setData("text", ev.target.id);
+    draggedTaskId = ev.target.id;
+    if (ev.target.parentElement && ev.target.parentElement.classList.contains("task-area")) {
+        draggedFromStage = getStageNameFromArea(ev.target.parentElement);
+    } else {
+        draggedFromStage = null;
+    }
+}
+
+function dragEnd() {
+    draggedTaskId = null;
+    draggedFromStage = null;
 }
 
 function drop(ev, el) {
     ev.preventDefault();
     let data = ev.dataTransfer.getData("text");
-    el.appendChild(document.getElementById(data));
-    let key = parseInt(data.replace("task-", ""));
-    let transaction, objectstore, index, request;
-    transaction = dbobject.transaction(['tasks'], 'readwrite');
-    objectstore = transaction.objectStore('tasks');
+    const draggedElement = document.getElementById(data);
+    if (!draggedElement) {
+        return;
+    }
 
-    index = objectstore.index('by_task');
-    request = index.openCursor(IDBKeyRange.lowerBound(0), 'next');
-    request.onerror = function (event) {
-        console.log("Drop " + data + " failed! " + event);
-    };
+    const afterElement = getDragAfterElement(el, ev.clientY, data);
+    if (afterElement === null) {
+        el.appendChild(draggedElement);
+    } else {
+        el.insertBefore(draggedElement, afterElement);
+    }
 
-    transaction.oncomplete = function () {
-        scheduleBackup();
-    };
+    const droppedToStage = getStageNameFromArea(el);
+    persistTaskOrderForStages([draggedFromStage, droppedToStage]).catch(function (error) {
+        console.log("Drop ordering persist failed!", error);
+    }).finally(function () {
+        dragEnd();
+    });
+}
 
-    request.onsuccess = function (successevent) {
-        const cursor = request.result;
-        if (cursor) {
-            if (cursor.primaryKey === key) {
-                let taskDataUpdate = cursor.value;
-                taskDataUpdate.stage = el.id.replace("-tasks", "");
+function handleTaskAreaDragOver(ev, el) {
+    ev.preventDefault();
+    if (!draggedTaskId) {
+        return;
+    }
 
-                const updaterequest = cursor.update(taskDataUpdate);
-                updaterequest.onsuccess = function (e) {
-                    console.log("Task " + key + " successfully updated.");
-                }
-                updaterequest.onerror = function (e) {
-                    console.log("Update of task " + key + " failed!!");
-                }
-            }
-            cursor.continue();
-        }
+    const draggedElement = document.getElementById(draggedTaskId);
+    if (!draggedElement) {
+        return;
+    }
+
+    const afterElement = getDragAfterElement(el, ev.clientY, draggedTaskId);
+    if (afterElement === null) {
+        el.appendChild(draggedElement);
+    } else {
+        el.insertBefore(draggedElement, afterElement);
     };
 }
 
@@ -673,7 +870,9 @@ for (let el of taskareas) {
     el.addEventListener("drop", function (ev) {
         drop(ev, el)
     }, false);
-    el.addEventListener("dragover", allowDrop, false);
+    el.addEventListener("dragover", function (ev) {
+        handleTaskAreaDragOver(ev, el);
+    }, false);
 }
 
 
@@ -692,6 +891,8 @@ function resetForm() {
     hidden fields
     */
     addNew.key.value = '';
+    addNew.sort_order.value = '';
+    addNew.old_stage.value = '';
 
     /* Set default start, due dates */
     //addNew.due.value = today;
@@ -719,7 +920,7 @@ doesn't exist. Displays existing tasks if there are any.
 init = function () {
     'use strict';
 
-    idb = indexedDB.open('IDBTaskList', 3);
+    idb = indexedDB.open('IDBTaskList', 4);
 
     idb.onupgradeneeded = function (evt) {
         let tasks, transaction;
@@ -736,6 +937,13 @@ init = function () {
             transaction.createIndex('resolved', 'resolved');
             transaction.createIndex('stage', 'stage');
             transaction.createIndex('display', 'display');
+        }
+
+        if (evt.oldVersion < 4) {
+            transaction = evt.target.transaction.objectStore('tasks');
+            if (!transaction.indexNames.contains('sort_order')) {
+                transaction.createIndex('sort_order', 'sort_order');
+            }
         }
     };
 
@@ -995,7 +1203,13 @@ function removeAllChildNodes(parent) {
 displayTasks = function (database) {
     'use strict';
 
-    let transaction, objectstore, index, request, docfrag = document.createDocumentFragment();
+    let transaction, objectstore, request;
+    const stages = {
+        current: [],
+        ongoing: [],
+        backlog: []
+    };
+
     removeAllChildNodes(currenttasksbox);
     removeAllChildNodes(ongoingtasksbox);
     removeAllChildNodes(backlogtasksbox);
@@ -1003,28 +1217,42 @@ displayTasks = function (database) {
     transaction = dbobject.transaction(['tasks'], 'readonly');
     objectstore = transaction.objectStore('tasks');
 
-    /* Search the by_task index since it's already sorted alphabetically */
-    index = objectstore.index('by_task');
-    request = index.openCursor(IDBKeyRange.lowerBound(0), 'next');
+    request = objectstore.openCursor(IDBKeyRange.lowerBound(0), 'next');
 
     request.onsuccess = function (successevent) {
-        let cursor, task, stage = 'backlog';
+        let cursor;
         cursor = request.result;
         if (cursor) {
-            stage = cursor.value.stage;
-            task = buildTask(cursor);
-            docfrag.appendChild(task);
+            const stageName = stages[cursor.value.stage] ? cursor.value.stage : 'backlog';
+            stages[stageName].push({
+                primaryKey: cursor.primaryKey,
+                value: cursor.value
+            });
             cursor.continue();
+            return;
         }
 
-        if (docfrag.childNodes.length) {
-            if (stage === 'current') {
-                currenttasksbox.appendChild(docfrag);
-            } else if (stage === 'ongoing') {
-                ongoingtasksbox.appendChild(docfrag);
-            } else {
-                backlogtasksbox.appendChild(docfrag);
+        const stageContainers = {
+            current: currenttasksbox,
+            ongoing: ongoingtasksbox,
+            backlog: backlogtasksbox
+        };
+
+        for (const stageName of Object.keys(stages)) {
+            const sortedTasks = stages[stageName].sort(function (a, b) {
+                const aOrder = Number.isFinite(a.value.sort_order) ? a.value.sort_order : Number.MAX_SAFE_INTEGER;
+                const bOrder = Number.isFinite(b.value.sort_order) ? b.value.sort_order : Number.MAX_SAFE_INTEGER;
+                if (aOrder !== bOrder) {
+                    return aOrder - bOrder;
+                }
+                return (a.value.task || '').localeCompare((b.value.task || ''));
+            });
+
+            const docfrag = document.createDocumentFragment();
+            for (const taskRecord of sortedTasks) {
+                docfrag.appendChild(buildTask(taskRecord));
             }
+            stageContainers[stageName].appendChild(docfrag);
         }
     };
 };
@@ -1090,6 +1318,43 @@ buildTask = function (recordobject) {
         }
         div.appendChild(p);
 
+        const ticketRow = document.createElement('div');
+        ticketRow.setAttribute('class', 'task-ticket-row');
+
+        const ticketNeeded = document.createElement('p');
+        ticketNeeded.setAttribute('class', 'task-ticket-needed');
+        ticketNeeded.innerText = "Ticket needed: " + (!!record.ticket_needed);
+        ticketRow.appendChild(ticketNeeded);
+
+        const ticketReferenceField = document.createElement('p');
+        ticketReferenceField.setAttribute('class', 'task-ticket-reference');
+        const ticketReference = (record.ticket_reference || "").trim();
+        if (!ticketReference) {
+            ticketReferenceField.innerText = "Ticket reference: -";
+        } else {
+            let isUrl = false;
+            try {
+                const parsedUrl = new URL(ticketReference);
+                isUrl = ["http:", "https:"].includes(parsedUrl.protocol);
+            } catch (error) {
+                isUrl = false;
+            }
+
+            if (isUrl) {
+                ticketReferenceField.appendChild(document.createTextNode("Ticket reference: "));
+                const link = document.createElement('a');
+                link.href = ticketReference;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.innerText = ticketReference;
+                ticketReferenceField.appendChild(link);
+            } else {
+                ticketReferenceField.innerText = "Ticket reference: " + ticketReference;
+            }
+        }
+        ticketRow.appendChild(ticketReferenceField);
+        div.appendChild(ticketRow);
+
         // display or hidden
         if (!record.display) {
             div.classList.add("hidden");
@@ -1098,6 +1363,7 @@ buildTask = function (recordobject) {
         // add drag event handlers
         div.setAttribute("draggable", "true");
         div.addEventListener("dragstart", drag, false);
+        div.addEventListener("dragend", dragEnd, false);
 
         return div;
     }
@@ -1128,6 +1394,8 @@ addNewHandler = function (evt) {
 
     /*  Convert to number */
     entry.priority = +fields.priority.value;
+    entry.ticket_needed = fields.ticket_needed.checked;
+    entry.ticket_reference = fields.ticket_reference.value.trim();
     entry.notes = fields.notes.value;
     entry.status = fields.status.checked ? "done" : "open";
     entry.stage = document.getElementById('stage-display').dataset.stage || document.getElementById('stage-display').innerText;
@@ -1142,6 +1410,24 @@ addNewHandler = function (evt) {
         }
     }
     entry.display = !fields.display.checked;
+
+    const savedSortOrder = fields.sort_order.value !== '' ? +fields.sort_order.value : null;
+    const oldStage = fields.old_stage.value;
+
+    if (fields.key.value && savedSortOrder !== null && oldStage === entry.stage) {
+        entry.sort_order = savedSortOrder;
+        continueSave();
+    } else {
+        getNextSortOrderForStage(entry.stage).then(function (nextOrder) {
+            entry.sort_order = nextOrder;
+            continueSave();
+        }).catch(function () {
+            entry.sort_order = Date.now();
+            continueSave();
+        });
+    }
+
+    function continueSave() {
     console.log(entry);
 
     transaction = dbobject.transaction(['tasks'], 'readwrite');
@@ -1175,6 +1461,7 @@ addNewHandler = function (evt) {
     };
 
     transaction.onerror = errorHandler;
+    }
 };
 
 updateStatus = function (evt) {
@@ -1272,6 +1559,8 @@ function evaluateStatement(statement, record) {
                 return record.value.task;
             case "notes":
                 return record.value.notes;
+            case "ticket_reference":
+                return record.value.ticket_reference || "";
             case "priority":
                 return mapPriority(record.value.priority);
             case "stage":
@@ -1280,6 +1569,8 @@ function evaluateStatement(statement, record) {
                 return !record.value.display;
             case "done":
                 return (record.value.status !== "open");
+            case "ticket_needed":
+                return !!record.value.ticket_needed;
             default:
                 return statement;
         }
@@ -1369,6 +1660,8 @@ editHandler = function (taskId) {
             addNew.status.checked = successevent.target.result.status === "done";
             addNew.resolved.value = successevent.target.result.resolved;
             addNew.display.checked = !successevent.target.result.display;
+            addNew.sort_order.value = Number.isFinite(Number(successevent.target.result.sort_order)) ? Number(successevent.target.result.sort_order) : '';
+            addNew.old_stage.value = successevent.target.result.stage;
 
             addNew.key.value = taskId;
             addNew.task.value = successevent.target.result.task;
@@ -1377,6 +1670,8 @@ editHandler = function (taskId) {
                 utils.yyyymmdd(new Date(successevent.target.result.due)) : addNew.due.value = '';
 
             addNew.priority.value = successevent.target.result.priority;
+            addNew.ticket_needed.checked = !!successevent.target.result.ticket_needed;
+            addNew.ticket_reference.value = successevent.target.result.ticket_reference || '';
             addNew.notes.value = successevent.target.result.notes;
         };
     }
@@ -1499,6 +1794,7 @@ savebtn.addEventListener('click', addNewHandler);
 backbtn.addEventListener('click', function () {
     location.reload();
 });
+initSearchHelpPopup();
 initThemeSettings();
 initLanguageSettings();
 window.addEventListener('load', init);

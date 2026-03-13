@@ -8,11 +8,12 @@ A public-domain licensed task manager built using IndexedDB.
 - Fully locally = no internet connection required
 - No installation, just run it in your browser
 - 3 task stages for better overview and daily prioritization
-- Task details like due date, priority, notes
+- Task details like due date, priority, notes, ticket requirement and ticket reference
 - Editing of tasks
 - Deletion of tasks
 - Hiding of tasks
 - Drag n' Drop support to move tasks between stages
+- Drag n' Drop sorting inside each stage to reorder tasks
 - Highlighting overdue tasks
 - Attribute based search of tasks
 - Export & Import of task database
@@ -66,12 +67,14 @@ Below you can find the query language definition and there validity based on the
 Keywords to be exchanged with values from the tasks:
 - title = the title / summary of the task (text string)
 - notes = the notes about the task (text string)
+- ticket_reference = the ticket reference (text string)
 - stage = the stage the task is in (text string)
 - priority = the priority of the task (text string)
 - due = the due date of the task (date string)
 - resolved = the resolution / completion date of the task (date string)
 - done = if the task is completed (boolean)
 - hidden = if the task is hidden (boolean)
+- ticket_needed = if a ticket is needed (boolean)
 - id = the ID of the task (number)
 
 Operators to form conditional terms:
@@ -91,3 +94,11 @@ ISO date and timestamp format. However, internally the value is interpreted by t
 function "Date.parse". Therefore, any common date formats should work out.
 - boolean values are just "true" or "false" without double quotes
 - number values are simples integers ([0-9]+)
+
+Example queries:
+- title ~ "report"
+- priority = "high" and done = false
+- stage = "ongoing" and due < "2026-12-31"
+- hidden = true or notes ~ "archive"
+- ticket_needed = true and ticket_reference ~ "ABC-"
+- id > 10 and resolved != ""

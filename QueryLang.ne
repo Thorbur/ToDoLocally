@@ -24,6 +24,7 @@ NATTR -> "id"							{% function(d) {return d[0]} %}
 
 SATTR -> "title" 						{% function(d) {return d[0]} %}
          | "notes" 						{% function(d) {return d[0]} %}
+		 | "ticket_reference" 				{% function(d) {return d[0]} %}
 		 | "priority" 					{% function(d) {return d[0]} %}
 		 | "stage"						{% function(d) {return d[0]} %}
 
@@ -31,7 +32,8 @@ DATTR -> "due"							{% function(d) {return d[0]} %}
 		 | "resolved"					{% function(d) {return d[0]} %}
 
 BATTR -> "hidden" 						{% function(d) {return d[0]} %}
-         | "done"						{% function(d) {return d[0]} %}
+		 | "done"						{% function(d) {return d[0]} %}
+		 | "ticket_needed"				{% function(d) {return d[0]} %}
 
 BOOL  -> "true" 						{% function(d) {return true} %}
 		 | "false"						{% function(d) {return false} %}
